@@ -202,7 +202,7 @@ void LiveSLAMWrapper::Loop()
         currentIMU_iter = imuBuf.begin() ;
         Quaternionf q, dq ;
         q.setIdentity() ;
-        while (currentIMU_iter->header.stamp < tImage )
+        while ( currentIMU_iter->header.stamp < tImage )
         {
             float pre_t = currentIMU_iter->header.stamp.toSec();
             currentIMU_iter = imuBuf.erase(currentIMU_iter);

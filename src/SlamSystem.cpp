@@ -32,11 +32,6 @@
 // for mkdir
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
 #include "opencv2/opencv.hpp"
 
 using namespace lsd_slam;
@@ -64,6 +59,8 @@ SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, ros::NodeHandle &n)
     int blockSize = 21 ;
     bm_ = cv::StereoBM( cv::StereoBM::BASIC_PRESET, maxDisparity, blockSize) ;
     initRosPub() ;
+
+    head = tail = 0 ;
 
 	lastTrackingClosenessScore = 0;
 	msTrackFrame = msOptimizationIteration = msFindConstraintsItaration = msFindReferences = 0;
@@ -174,18 +171,66 @@ void SlamSystem::gtDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int i
     frame->T_bk_2_b0.setZero() ;
     frame->v_bk.setZero() ;
     RefToFrame = SE3();
+    slidingWindow[tail] = currentKeyFrame ;
 //    std::cout << RefToFrame.rotationMatrix() << std::endl ;
 //    std::cout << RefToFrame.translation() << std::endl ;
+}
+
+void SlamSystem::twoWayMarginalize()
+{
+
+}
+
+void SlamSystem::setNewMarginalzationFlag()
+{
+
+}
+
+void SlamSystem::processIMU(float dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity)
+{
+    Quaternionf dq;
+    dq.x() = angular_velocity(0)*dt*0.5;
+    dq.y() = angular_velocity(1)*dt*0.5;
+    dq.z() = angular_velocity(2)*dt*0.5;
+    dq.w() = sqrt(1 - SQ(dq.x()) * SQ(dq.y()) * SQ(dq.z()));
+
+    Matrix3d deltaR(dq);
+    //R_c_0 = R_c_0 * deltaR;
+    //T_c_0 = ;
+    Frame* current = slidingWindow[tail].get() ;
+
+    Matrix<float, 9, 9> F = Matrix<float, 9, 9>::Zero();
+    F.block<3, 3>(0, 3) = Matrix3d::Identity();
+    F.block<3, 3>(3, 6) = -current->R_k1_k* vectorToSkewMatrix(linear_acceleration);
+    F.block<3, 3>(6, 6) = -vectorToSkewMatrix(angular_velocity);
+
+    Matrix<float, 6, 6> Q = Matrix<float, 6, 6>::Zero();
+    Q.block<3, 3>(0, 0) = acc_cov;
+    Q.block<3, 3>(3, 3) = gyr_cov;
+
+    Matrix<float, 9, 6> G = Matrix<float, 9, 6>::Zero();
+    G.block<3, 3>(3, 0) = -current->R_k1_k;
+    G.block<3, 3>(6, 3) = -Matrix3d::Identity();
+
+    current->P_k = (Matrix<float, 9, 9>::Identity() + dt * F)
+            * current->P_k * (Matrix<float, 9, 9>::Identity() + dt * F).transpose() + (dt * G) * Q * (dt * G).transpose();
+    //current->R_k1_k = current->R_k1_k*deltaR;
+    current->alpha_c_k += current->beta_c_k*dt + current->R_k1_k*linear_acceleration * dt * dt * 0.5 ;
+    current->beta_c_k += current->R_k1_k*linear_acceleration*dt;
+    current->R_k1_k = current->R_k1_k*deltaR;
+    current->timeIntegral += dt;
 }
 
 void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, double timestamp)
 {
 	// Create new frame
-    std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, img1.data ));
+    stshared_ptrd::<Frame> trackingNewFrame(new Frame(frameID, width, height, K, timestamp, img1.data ));
 
     if (  trackingReference->keyframe != currentKeyFrame.get() ){
          trackingReference->importFrame( currentKeyFrame.get() );
     }
+    tail++ ;
+    slidingWindow[tail] = trackingNewFrame ;
 
     //initial guess
     SE3 RefToFrame_initialEstimate = RefToFrame ;
@@ -257,6 +302,12 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, do
         frame->v_bk.setZero() ;
         RefToFrame = SE3() ;
         createNewKeyFrame = false;
+
+        tail++ ;
+        if ( tail >= slidingWindowSize ){
+            tail -= slidingWindowSize ;
+        }
     }
+    lastTrackedFrame = trackingNewFrame ;
 }
 

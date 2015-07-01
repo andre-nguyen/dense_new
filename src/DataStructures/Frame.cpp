@@ -31,9 +31,28 @@ int privateFrameAllocCount = 0;
 
 
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image)
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
+             const unsigned char* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel )
 {
-	initialize(id, width, height, K, timestamp);
+    initialize(id, width, height, K, timestamp);
+
+    //init the state
+    R_bk_2_b0 = R;
+    T_bk_2_b0 = T;
+    v_bk = vel;
+
+    //init the error state
+    alpha_c_k.setZero();
+    beta_c_k.setZero();
+    R_k1_k.setIdentity();
+    P_k.setZero();
+    timeIntegral = 0;
+
+    //set the keyFrameFlag
+    keyFrameFlag = false;
+
+    //set the imu_link_Flag
+    imuLinkFlag = true;
 	
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	float* maxPt = data.image[0] + data.width[0]*data.height[0];
@@ -52,7 +71,8 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 		printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image)
+Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
+             const float* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel )
 {
 	initialize(id, width, height, K, timestamp);
 	
@@ -152,8 +172,6 @@ void Frame::setDepthFromGroundTruth(const float* depth)
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 	const float* pyrMaxGradient = maxGradients(0);
 
-
-
 	boost::unique_lock<boost::mutex> lock2(buildMutex);
 	if(data.idepth[0] == 0)
 		data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
@@ -166,6 +184,8 @@ void Frame::setDepthFromGroundTruth(const float* depth)
 	int width0 = data.width[0];
 	int height0 = data.height[0];
 
+    meanIdepth = 0 ;
+    int numSum = 0 ;
 	for(int y=0;y<height0;y++)
 	{
 		for(int x=0;x<width0;x++)
@@ -174,6 +194,9 @@ void Frame::setDepthFromGroundTruth(const float* depth)
 					pyrMaxGradient[x+y*width0] >= MIN_ABS_GRAD_CREATE &&
                     *depth > 0)
 			{
+                meanIdepth += *depth ;
+                numSum++ ;
+
                 *pyrIDepth = 1.0f / *depth ;
                 *pyrIDepthVar = VAR_GT_INIT_INITIAL ;
 			}
@@ -188,6 +211,13 @@ void Frame::setDepthFromGroundTruth(const float* depth)
 			++ pyrIDepthVar;
 		}
 	}
+    if ( numSum > 0 ){
+        meanIdepth /= numSum ;
+        meanIdepth = 1.0/meanIdepth ;
+    }
+    else {
+        meanIdepth = 1.0 ;
+    }
 	
 	data.idepthValid[0] = true;
 	data.idepthVarValid[0] = true;
@@ -279,7 +309,6 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
 {
 	data.id = id;
 	
-
 	data.K[0] = K;
 	data.fx[0] = K(0,0);
 	data.fy[0] = K(1,1);
@@ -355,11 +384,6 @@ void Frame::initialize(int id, int width, int height, const Eigen::Matrix3f& K, 
 	edgeErrorSum = edgesNum = 1;
 
 	isActive = false;
-}
-
-void Frame::setDepth_Allocate()
-{
-	return;
 }
 
 void Frame::buildImage(int level)

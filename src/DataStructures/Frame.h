@@ -46,10 +46,11 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
 
+    Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
+          const unsigned char* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel );
 
-	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const unsigned char* image);
-
-	Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp, const float* image);
+    Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
+          const float* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel);
 
 	~Frame();
 	
@@ -58,8 +59,7 @@ public:
 	void calculateMeanInformation();
 	
 	/** Sets ground truth depth (real, not inverse!) from a float array on level zero. Invalidates higher levels. */
-    void setDepthFromGroundTruth(const float *depth);
-	
+    void setDepthFromGroundTruth(const float *depth);	
 
 	// Accessors
 	/** Returns the unique frame id. */
@@ -166,6 +166,7 @@ public:
     Eigen::Matrix<float, 9, 9> P_k;//P_k+1^k, covariance matrix
     float timeIntegral;
     bool imuLinkFlag;
+    bool keyFrameFlag;
 
 private:
 
@@ -173,7 +174,6 @@ private:
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
 
 	void initialize(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp);
-	void setDepth_Allocate();
 	
 	void buildImage(int level);
 	void releaseImage(int level);

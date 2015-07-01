@@ -61,6 +61,7 @@ public:
     int nTrackFrame, nOptimizationIteration, nFindConstraintsItaration, nFindReferences;
     float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration, nAvgFindReferences;
     struct timeval lastHzUpdate;
+    int head, tail ;
 
     ros::NodeHandle nh ;
     ros::Publisher pub_path ;
@@ -92,12 +93,16 @@ public:
 
     /** Returns the current pose estimate. */
     void debugDisplayDepthMap();
+    void twoWayMarginalize();
+    void setNewMarginalzationFlag();
+    void processIMU(double dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity) ;
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.
 	SE3Tracker* tracker;
+    std::shared_ptr<Frame> slidingWindow[slidingWindowSize] ;
     std::shared_ptr<Frame> currentKeyFrame;	// changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
-    std::shared_ptr<Frame> latestTrackedFrame;
+    std::shared_ptr<Frame> lastTrackedFrame;
     bool createNewKeyFrame;
 
 	// ============= SHARED ENTITIES =============
