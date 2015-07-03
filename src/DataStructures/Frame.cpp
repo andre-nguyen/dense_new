@@ -28,7 +28,7 @@ namespace lsd_slam
 int privateFrameAllocCount = 0;
 
 Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-             const unsigned char* image, Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel )
+             const unsigned char* image, Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel )
 {
     initialize(id, width, height, K, timestamp);
 

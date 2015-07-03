@@ -54,7 +54,7 @@ public:
 	int height;
 	Eigen::Matrix3f K;
     SE3 RefToFrame ;
-    Eigen::Vector3f gravity_b0;
+    Eigen::Vector3d gravity_b0;
     bool twoWayMarginalizatonFlag = false;//false, marginalize oldest; true, marginalize newest
     MARGINALIZATION margin;
 
@@ -99,7 +99,7 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-    void trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, ros::Time imageTimeStamp, Eigen::Matrix3f deltaR);
+    void trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, ros::Time imageTimeStamp, Matrix3d deltaR);
 
     /** Returns the current pose estimate. */
     void debugDisplayDepthMap();
@@ -108,10 +108,10 @@ public:
     void twoWayMarginalize();
     void setNewMarginalzationFlag();
     void insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp,
-                     Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel ) ;
+                     Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel ) ;
     void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
-            const Matrix3f& R_k_2_c, const Vector3f& T_k_2_c, const MatrixXf& lastestATA );
-    void processIMU(float dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity);
+            const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c, const MatrixXd& lastestATA );
+    void processIMU(float dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity);
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.

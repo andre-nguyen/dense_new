@@ -132,6 +132,8 @@ void LiveSLAMWrapper::popAndSetGravity()
     }
     std::cout << "gravity_b0 =\n" ;
     std::cout << gravity_b0 << "\n" ;
+
+    monoOdometry->margin.initPrior();
 }
 
 
@@ -195,8 +197,8 @@ void LiveSLAMWrapper::BALoop()
 
         imu_queue_mtx.lock();
         iterIMU = imuQueue.begin() ;
-        Vector3f linear_acceleration;
-        Vector3f angular_velocity;
+        Vector3d linear_acceleration;
+        Vector3d angular_velocity;
 
         //std::cout << "imageTime=" << imageTimeStamp << std::endl;
         while ( iterIMU->header.stamp < imageTimeStamp )
@@ -229,12 +231,12 @@ void LiveSLAMWrapper::BALoop()
         Frame* lastFrame = monoOdometry->slidingWindow[monoOdometry->tail].get();
         float dt = lastFrame->timeIntegral;
 
-        Vector3f T_bk1_2_b0 = lastFrame->T_bk_2_b0 - 0.5 * gravity_b0 * dt *dt
+        Vector3d T_bk1_2_b0 = lastFrame->T_bk_2_b0 - 0.5 * gravity_b0 * dt *dt
                 + lastFrame->R_bk_2_b0*(lastFrame->v_bk * dt  + lastFrame->alpha_c_k);
-        Vector3f v_bk1 = lastFrame->R_k1_k.transpose() *
+        Vector3d v_bk1 = lastFrame->R_k1_k.transpose() *
                 (lastFrame->v_bk - lastFrame->R_bk_2_b0.transpose() * gravity_b0 * dt
                  + lastFrame->beta_c_k);
-        Matrix3f R_bk1_2_b0 = lastFrame->R_bk_2_b0 * lastFrame->R_k1_k;
+        Matrix3d R_bk1_2_b0 = lastFrame->R_bk_2_b0 * lastFrame->R_k1_k;
 
         monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp, R_bk1_2_b0, T_bk1_2_b0, v_bk1);
         Frame* currentFrame = monoOdometry->slidingWindow[monoOdometry->tail].get();
@@ -260,7 +262,7 @@ void LiveSLAMWrapper::BALoop()
             monoOdometry->currentKeyFrame->keyFrameFlag = true ;
             monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
             //reset the initial guess
-            monoOdometry->RefToFrame = Sophus::SE3f() ;
+            monoOdometry->RefToFrame = Sophus::SE3() ;
 
             //unlock dense tracking
             monoOdometry->tracking_mtx.lock();
@@ -275,9 +277,12 @@ void LiveSLAMWrapper::BALoop()
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].lastestATA );
         }
 
+        cout << "[-BA]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
+        cout << "[-BA]current Velocity: " << currentFrame->v_bk.transpose() << endl;
+
         //BA
         t = (double)cvGetTickCount()  ;
-        //monoOdometry->BA();
+        monoOdometry->BA();
         printf("BA cost time: %f\n", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
         t = (double)cvGetTickCount()  ;
 
@@ -285,16 +290,16 @@ void LiveSLAMWrapper::BALoop()
         cout << "[BA-]current Velocity: " << currentFrame->v_bk.transpose() << endl;
 
         //marginalziation
-        //monoOdometry->twoWayMarginalize();
-        //monoOdometry->setNewMarginalzationFlag();
+        monoOdometry->twoWayMarginalize();
+        monoOdometry->setNewMarginalzationFlag();
 
         //    pubOdometry(-T_bk1_2_b0, R_bk1_2_b0, pub_odometry, pub_pose );
         //    pubPath(-T_bk1_2_b0, path_line, pub_path );
 
-        pubOdometry(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+        pubOdometry(-monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
                 monoOdometry->pub_odometry, monoOdometry->pub_pose );
-        pubPath(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+        pubPath(-monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag,
                 monoOdometry->path_line, monoOdometry->pub_path);
     }
@@ -371,7 +376,7 @@ void LiveSLAMWrapper::Loop()
         image0_queue_mtx.unlock();
 
         imu_queue_mtx.lock();
-        Quaternionf q, dq ;
+        Quaterniond q, dq ;
         q.setIdentity() ;
         while ( currentIMU_iter != imuQueue.end() && currentIMU_iter->header.stamp < imageTimeStamp )
         {
@@ -391,7 +396,7 @@ void LiveSLAMWrapper::Loop()
 
 		// process image
 		//Util::displayImage("MyVideo", image.data);
-        Matrix3f deltaR(q) ;
+        Matrix3d deltaR(q) ;
 
         //puts("444") ;
 
@@ -403,7 +408,7 @@ void LiveSLAMWrapper::Loop()
         if(!isInitialized)
         {
             monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp,
-                                      Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero() );
+                                      Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
             cv::Mat disparity, depth ;
             monoOdometry->bm_(image1, image0, disparity, CV_32F);
             calculateDepthImage(disparity, depth, 0.11, fx );
@@ -412,7 +417,7 @@ void LiveSLAMWrapper::Loop()
 
             monoOdometry->currentKeyFrame->keyFrameFlag = true ;
             monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
-            monoOdometry->RefToFrame = Sophus::SE3f() ;
+            monoOdometry->RefToFrame = Sophus::SE3() ;
             isInitialized = true;
         }
         else if(isInitialized && monoOdometry != nullptr)
@@ -424,8 +429,8 @@ void LiveSLAMWrapper::Loop()
 
 void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
 {
-	Sophus::Quaternionf quat = camToWorld.unit_quaternion().cast<float>();
-	Eigen::Vector3f trans = camToWorld.translation().cast<float>();
+    Sophus::Quaterniond quat = camToWorld.unit_quaternion();
+    Eigen::Vector3d trans = camToWorld.translation();
 
 	char buffer[1000];
 	int num = snprintf(buffer, 1000, "%f %f %f %f %f %f %f %f\n",

@@ -46,8 +46,8 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
 
-    Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-          const unsigned char* image, Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel );
+    Frame(int id, int width, int height, const Eigen::Matrix3f &K, double timestamp,
+          const unsigned char* image, Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel );
 	~Frame();
 
 	/** Calculates mean information for statistical purposes. */
@@ -150,15 +150,15 @@ public:
 	float meanInformation;
 
     //added state
-    Eigen::Matrix3f R_bk_2_b0 ;
-    Eigen::Vector3f T_bk_2_b0 ;
-    Eigen::Vector3f v_bk ;
+    Eigen::Matrix3d R_bk_2_b0 ;
+    Eigen::Vector3d T_bk_2_b0 ;
+    Eigen::Vector3d v_bk ;
 
     //imu integration
-    Eigen::Vector3f alpha_c_k;//alpha_k+1^k
-    Eigen::Vector3f beta_c_k;//beta_k+1^k
-    Eigen::Matrix3f R_k1_k;//q_k+1^k
-    Eigen::Matrix<float, 9, 9> P_k;//P_k+1^k, covariance matrix
+    Eigen::Vector3d alpha_c_k;//alpha_k+1^k
+    Eigen::Vector3d beta_c_k;//beta_k+1^k
+    Eigen::Matrix3d R_k1_k;//q_k+1^k
+    Eigen::Matrix<double, 9, 9> P_k;//P_k+1^k, covariance matrix
     float timeIntegral;
     bool imuLinkFlag;
     bool keyFrameFlag;

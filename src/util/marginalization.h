@@ -13,14 +13,14 @@ using namespace std;
 struct MARGINALIZATION
 {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  MatrixXf Ap;
-  VectorXf bp ;
+  MatrixXd Ap;
+  VectorXd bp ;
 	int size;
 
 	MARGINALIZATION()
 	{
-    Ap = MatrixXf::Zero(variablesNumInState * slidingWindowSize, variablesNumInState * slidingWindowSize);
-    bp = VectorXf::Zero(variablesNumInState * slidingWindowSize);
+    Ap = MatrixXd::Zero(variablesNumInState * slidingWindowSize, variablesNumInState * slidingWindowSize);
+    bp = VectorXd::Zero(variablesNumInState * slidingWindowSize);
 		size = 0;
 	}
 	~MARGINALIZATION(){
@@ -33,13 +33,13 @@ struct MARGINALIZATION
     		Ap.block(0, 0, 3, 3) *= SQ(1000000);
     		Ap.block(3, 3, 3, 3) *= SQ(1000000);
     		Ap.block(6, 6, 3, 3) *= SQ(1000000);
-    bp.segment(0, variablesNumInState) = VectorXf::Zero(variablesNumInState);
+    bp.segment(0, variablesNumInState) = VectorXd::Zero(variablesNumInState);
 	}
 
 	void marginalizeOutTheEnd()
 	{
 		//Schur complement
-    MatrixXf BD_inv = Ap.block(0, STATE_SZ(size - 1), STATE_SZ(size - 1), variablesNumInState)
+    MatrixXd BD_inv = Ap.block(0, STATE_SZ(size - 1), STATE_SZ(size - 1), variablesNumInState)
 			* Ap.block(STATE_SZ(size - 1), STATE_SZ(size - 1), variablesNumInState, variablesNumInState).inverse();
 		Ap.block(0, 0, STATE_SZ(size - 1), STATE_SZ(size - 1)) -= 
 			BD_inv*Ap.block(STATE_SZ(size - 1), 0, variablesNumInState, STATE_SZ(size - 1) );
@@ -72,7 +72,7 @@ struct MARGINALIZATION
 	void popEndState()
 	{
 		//swap cols 
-    MatrixXf tmp = Ap.block(0, 0, STATE_SZ(size), variablesNumInState);
+    MatrixXd tmp = Ap.block(0, 0, STATE_SZ(size), variablesNumInState);
 		for (int i = 1; i < size; i++) {
 			Ap.block(0, STATE_SZ(i - 1), STATE_SZ(size), variablesNumInState) 
 				= Ap.block(0, STATE_SZ(i), STATE_SZ(size), variablesNumInState );
@@ -81,7 +81,7 @@ struct MARGINALIZATION
 
 		//swap rows
 		tmp = Ap.block(0, 0, variablesNumInState, STATE_SZ(size) );
-    VectorXf tmpb = bp.segment(0, variablesNumInState );
+    VectorXd tmpb = bp.segment(0, variablesNumInState );
 		for (int i = 1; i < size; i++){
 			Ap.block(STATE_SZ(i - 1), 0, variablesNumInState, STATE_SZ(size) ) 
 				= Ap.block(STATE_SZ(i), 0, variablesNumInState, STATE_SZ(size) );

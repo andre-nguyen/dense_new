@@ -297,7 +297,7 @@ SE3 SE3Tracker::trackFrame(
 //	}
 
 	// ============ track frame ============
-    Sophus::SE3f referenceToFrame = RefToFrame_initialEstimate;
+    Sophus::SE3f referenceToFrame = RefToFrame_initialEstimate.cast<float>();
 	LGS6 ls;
 
 
@@ -479,7 +479,7 @@ SE3 SE3Tracker::trackFrame(
     }
 
     frame->initialTrackedResidual = lastResidual / pointUsage;
-    return referenceToFrame ;
+    return toSophus(referenceToFrame) ;
 }
 
 #if defined(ENABLE_SSE)

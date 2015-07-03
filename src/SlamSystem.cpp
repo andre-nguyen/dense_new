@@ -163,7 +163,7 @@ void SlamSystem::setDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int 
     calculateDepthImage(disparity, depth, 0.11, K(0, 0) );
 
     currentKeyFrame.reset(new Frame(id, width, height, K, timeStamp, img1.data,
-                                    Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero() ));
+                                    Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() ));
     Frame* frame = currentKeyFrame.get() ;
     frame->setDepthFromGroundTruth( (float*)depth.data );
     if ( printDebugInfo ){
@@ -186,51 +186,51 @@ void SlamSystem::setDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int 
 
 void SlamSystem::copyStateData( int preStateID )
 {
-  //copy the lastest data to the second lastest
+//  //copy the lastest data to the second lastest
 
 //  //1. basic data
-//  slidingWindow[preStateID]->R_bk_2_b0 = states[tail].R_bk_2_b0;
-//  slidingWindow[preStateID]->T_bk_2_b0 = states[tail].T_bk_2_b0;
-//  slidingWindow[preStateID]->v_bk = states[tail].v_bk;
+//  slidingWindow[preStateID]->R_bk_2_b0 = slidingWindow[tail]->R_bk_2_b0;
+//  slidingWindow[preStateID]->T_bk_2_b0 = slidingWindow[tail]->T_bk_2_b0;
+//  slidingWindow[preStateID]->v_bk = slidingWindow[tail]->v_bk;
 
-//  slidingWindow[preStateID]->alpha_c_k = states[tail].alpha_c_k;
-//  slidingWindow[preStateID]->beta_c_k = states[tail].beta_c_k;
-//  slidingWindow[preStateID]->R_k1_k = states[tail].R_k1_k;
-//  slidingWindow[preStateID]->P_k = states[tail].P_k;
-//  slidingWindow[preStateID]->timeIntegral = states[tail].timeIntegral;
+//  slidingWindow[preStateID]->alpha_c_k = slidingWindow[tail]->alpha_c_k;
+//  slidingWindow[preStateID]->beta_c_k = slidingWindow[tail]->beta_c_k;
+//  slidingWindow[preStateID]->R_k1_k = slidingWindow[tail]->R_k1_k;
+//  slidingWindow[preStateID]->P_k = slidingWindow[tail]->P_k;
+//  slidingWindow[preStateID]->timeIntegral = slidingWindow[tail]->timeIntegral;
 
-//  slidingWindow[preStateID]->keyFrameFlag = states[tail].keyFrameFlag;
-//  slidingWindow[preStateID]->imuLinkFlag = states[tail].imuLinkFlag;
-//  slidingWindow[preStateID]->timestamp = states[tail].timestamp;
+//  slidingWindow[preStateID]->keyFrameFlag = slidingWindow[tail]->keyFrameFlag;
+//  slidingWindow[preStateID]->imuLinkFlag = slidingWindow[tail]->imuLinkFlag;
+//  slidingWindow[preStateID]->timestamp = slidingWindow[tail]->timestamp;
 
 //  int n = height;
 //  int m = width;
 //  for (int i = 0; i < maxPyramidLevel; i++)
 //  {
-//    memcpy(slidingWindow[preStateID]->intensity[i], states[tail].intensity[i], n*m*sizeof(unsigned char));
-//    if (states[tail].keyFrameFlag )
+//    memcpy(slidingWindow[preStateID]->intensity[i], slidingWindow[tail]->intensity[i], n*m*sizeof(unsigned char));
+//    if (slidingWindow[tail]->keyFrameFlag )
 //    {
-//      memcpy(slidingWindow[preStateID]->depthImage[i], states[tail].depthImage[i], n*m*sizeof(float));
-//      memcpy(slidingWindow[preStateID]->gradientX[i], states[tail].gradientX[i], n*m*sizeof(double));
-//      memcpy(slidingWindow[preStateID]->gradientY[i], states[tail].gradientY[i], n*m*sizeof(double));
+//      memcpy(slidingWindow[preStateID]->depthImage[i], slidingWindow[tail]->depthImage[i], n*m*sizeof(float));
+//      memcpy(slidingWindow[preStateID]->gradientX[i], slidingWindow[tail]->gradientX[i], n*m*sizeof(double));
+//      memcpy(slidingWindow[preStateID]->gradientY[i], slidingWindow[tail]->gradientY[i], n*m*sizeof(double));
 
-//      slidingWindow[preStateID]->totalNumOfValidPixels[i] = states[tail].totalNumOfValidPixels[i];
+//      slidingWindow[preStateID]->totalNumOfValidPixels[i] = slidingWindow[tail]->totalNumOfValidPixels[i];
 
-//      int sz = states[tail].pixelInfo[i].Aij.size();
+//      int sz = slidingWindow[tail]->pixelInfo[i].Aij.size();
 //      slidingWindow[preStateID]->pixelInfo[i].Aij.clear();
 //      slidingWindow[preStateID]->pixelInfo[i].Aij.resize(sz);
 //      slidingWindow[preStateID]->pixelInfo[i].AijTAij.clear();
 //      slidingWindow[preStateID]->pixelInfo[i].AijTAij.resize(sz);
 //      for (int j = 0; j < sz; j++)
 //      {
-//        slidingWindow[preStateID]->pixelInfo[i].Aij[j] = states[tail].pixelInfo[i].Aij[j];
-//        slidingWindow[preStateID]->pixelInfo[i].AijTAij[j] = states[tail].pixelInfo[i].AijTAij[j];
+//        slidingWindow[preStateID]->pixelInfo[i].Aij[j] = slidingWindow[tail]->pixelInfo[i].Aij[j];
+//        slidingWindow[preStateID]->pixelInfo[i].AijTAij[j] = slidingWindow[tail]->pixelInfo[i].AijTAij[j];
 //      }
-////        slidingWindow[preStateID]->pixelInfo[i].Aij.swap( states[tail].pixelInfo[i].Aij );
-////        slidingWindow[preStateID]->pixelInfo[i].AijTAij.swap( states[tail].pixelInfo[i].AijTAij );
-//      slidingWindow[preStateID]->pixelInfo[i].piList = states[tail].pixelInfo[i].piList ;
-//      slidingWindow[preStateID]->pixelInfo[i].intensity = states[tail].pixelInfo[i].intensity ;
-//      slidingWindow[preStateID]->pixelInfo[i].goodPixel = states[tail].pixelInfo[i].goodPixel ;
+////        slidingWindow[preStateID]->pixelInfo[i].Aij.swap( slidingWindow[tail]->pixelInfo[i].Aij );
+////        slidingWindow[preStateID]->pixelInfo[i].AijTAij.swap( slidingWindow[tail]->pixelInfo[i].AijTAij );
+//      slidingWindow[preStateID]->pixelInfo[i].piList = slidingWindow[tail]->pixelInfo[i].piList ;
+//      slidingWindow[preStateID]->pixelInfo[i].intensity = slidingWindow[tail]->pixelInfo[i].intensity ;
+//      slidingWindow[preStateID]->pixelInfo[i].goodPixel = slidingWindow[tail]->pixelInfo[i].goodPixel ;
 //    }
 //    n >>= 1;
 //    m >>= 1;
@@ -269,6 +269,8 @@ void SlamSystem::copyStateData( int preStateID )
   }
 
   numOfState--;
+  //swap the pointer
+  slidingWindow[preStateID] = slidingWindow[tail] ;
   tail = preStateID;
 
   preStateID = tail - 1;
@@ -286,14 +288,17 @@ void SlamSystem::twoWayMarginalize()
       //marginalized the oldest frame
       if (numOfState == slidingWindowSize)
       {
-        vector<Vector3f>T(slidingWindowSize);
-        vector<Vector3f>vel(slidingWindowSize);
-        vector<Matrix3f>R(slidingWindowSize);
+        vector<Vector3d>T(slidingWindowSize);
+        vector<Vector3d>vel(slidingWindowSize);
+        vector<Matrix3d>R(slidingWindowSize);
         for (int i = 0; i < slidingWindowSize; i++)
         {
-          R[i] = slidingWindow[i]->R_bk_2_b0;
-          T[i] = slidingWindow[i]->T_bk_2_b0;
-          vel[i] = slidingWindow[i]->v_bk;
+            if ( slidingWindow[i] != nullptr )
+            {
+                R[i] = slidingWindow[i]->R_bk_2_b0;
+                T[i] = slidingWindow[i]->T_bk_2_b0;
+                vel[i] = slidingWindow[i]->v_bk;
+            }
         }
 
         margin.size++;
@@ -305,29 +310,29 @@ void SlamSystem::twoWayMarginalize()
           if (k1 >= slidingWindowSize){
             k1 -= slidingWindowSize;
           }
-          MatrixXf H_k1_2_k(9, 18);
-          MatrixXf H_k1_2_k_T;
-          VectorXf residualIMU(9);
+          MatrixXd H_k1_2_k(9, 18);
+          MatrixXd H_k1_2_k_T;
+          VectorXd residualIMU(9);
 
-          Vector3f t1 = R[k].transpose()*(T[k1] - T[k] + gravity_b0* SQ(slidingWindow[k]->timeIntegral)*0.5);
-          Vector3f t2 = R[k].transpose()*(R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral);
+          Vector3d t1 = R[k].transpose()*(T[k1] - T[k] + gravity_b0* SQ(slidingWindow[k]->timeIntegral)*0.5);
+          Vector3d t2 = R[k].transpose()*(R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral);
 
           H_k1_2_k.setZero();
           H_k1_2_k.block(0, 0, 3, 3) = -R[k].transpose();
-          H_k1_2_k.block(0, 3, 3, 3) = -Matrix3f::Identity()*slidingWindow[k]->timeIntegral;
+          H_k1_2_k.block(0, 3, 3, 3) = -Matrix3d::Identity()*slidingWindow[k]->timeIntegral;
           H_k1_2_k.block(0, 6, 3, 3) = vectorToSkewMatrix(t1);
-          H_k1_2_k.block(3, 3, 3, 3) = -Matrix3f::Identity();
+          H_k1_2_k.block(3, 3, 3, 3) = -Matrix3d::Identity();
           H_k1_2_k.block(3, 6, 3, 3) = vectorToSkewMatrix(t2);
           H_k1_2_k.block(6, 6, 3, 3) = -R[k1].transpose() * R[k];
 
           H_k1_2_k.block(0, 9, 3, 3) = R[k].transpose();
           H_k1_2_k.block(3, 12, 3, 3) = R[k].transpose() *  R[k1];
           H_k1_2_k.block(3, 15, 3, 3) = -R[k].transpose() *  R[k1] * vectorToSkewMatrix(vel[k1]);
-          H_k1_2_k.block(6, 15, 3, 3) = Matrix3f::Identity();
+          H_k1_2_k.block(6, 15, 3, 3) = Matrix3d::Identity();
 
           residualIMU.segment(0, 3) = t1 - vel[k] * slidingWindow[k]->timeIntegral - slidingWindow[k]->alpha_c_k;
           residualIMU.segment(3, 3) = t2 - vel[k] - slidingWindow[k]->beta_c_k;
-          residualIMU.segment(6, 3) = 2.0 * (Quaternionf(slidingWindow[k]->R_k1_k.transpose()) * Quaternionf(R[k].transpose() *  R[k1])).vec();
+          residualIMU.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[k]->R_k1_k.transpose()) * Quaterniond(R[k].transpose() *  R[k1])).vec();
 
           H_k1_2_k_T = H_k1_2_k.transpose();
           H_k1_2_k_T *= slidingWindow[k]->P_k.inverse();
@@ -340,27 +345,27 @@ void SlamSystem::twoWayMarginalize()
 
         //2. camera constraints
         int currentStateID = head;
-        MatrixXf H_i_2_j(9, 18);
-        MatrixXf H_i_2_j_T;
-        VectorXf residualCamera(9);
-        MatrixXf tmpP_inv(9, 9);
-        MatrixXf tmpHTH;
-        VectorXf tmpHTb;
+        MatrixXd H_i_2_j(9, 18);
+        MatrixXd H_i_2_j_T;
+        VectorXd residualCamera(9);
+        MatrixXd tmpP_inv(9, 9);
+        MatrixXd tmpHTH;
+        VectorXd tmpHTb;
         list<int>::iterator iter = slidingWindow[currentStateID]->cameraLinkList.begin();
         for (; iter != slidingWindow[currentStateID]->cameraLinkList.end(); iter++)
         {
           int linkID = *iter;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(6, 6, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3f::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
           H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
           residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]* slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
-          residualCamera.segment(6, 3) = 2.0 * (Quaternionf(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaternionf(R[linkID].transpose()*R[currentStateID])).vec();
+          residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
           tmpP_inv.setZero();
           tmpP_inv.block(0, 0, 3, 3) = slidingWindow[currentStateID]->cameraLink[linkID].P_inv.block(0, 0, 3, 3) ;
@@ -434,14 +439,17 @@ void SlamSystem::twoWayMarginalize()
     else
     {
       //marginalized the second newest frame
-      vector<Vector3f>T(slidingWindowSize);
-      vector<Vector3f>vel(slidingWindowSize);
-      vector<Matrix3f>R(slidingWindowSize);
+      vector<Vector3d>T(slidingWindowSize);
+      vector<Vector3d>vel(slidingWindowSize);
+      vector<Matrix3d>R(slidingWindowSize);
       for (int i = 0; i < slidingWindowSize; i++)
       {
-        R[i] = slidingWindow[i]->R_bk_2_b0;
-        T[i] = slidingWindow[i]->T_bk_2_b0;
-        vel[i] = slidingWindow[i]->v_bk;
+          if ( slidingWindow[i] != nullptr )
+          {
+              R[i] = slidingWindow[i]->R_bk_2_b0;
+              T[i] = slidingWindow[i]->T_bk_2_b0;
+              vel[i] = slidingWindow[i]->v_bk;
+          }
       }
 
       margin.size++;
@@ -450,17 +458,17 @@ void SlamSystem::twoWayMarginalize()
         preStateID += slidingWindowSize;
       }
 
-      MatrixXf tmpHTH;
-      VectorXf tmpHTb;
+      MatrixXd tmpHTH;
+      VectorXd tmpHTb;
 
-      MatrixXf H_k1_2_k(9, 18);
-      MatrixXf H_k1_2_k_T;
-      VectorXf residualIMU(9);
+      MatrixXd H_k1_2_k(9, 18);
+      MatrixXd H_k1_2_k_T;
+      VectorXd residualIMU(9);
 
-      MatrixXf H_i_2_j(9, 18);
-      MatrixXf H_i_2_j_T;
-      VectorXf residualCamera(9);
-      MatrixXf tmpP_inv(9, 9);
+      MatrixXd H_i_2_j(9, 18);
+      MatrixXd H_i_2_j_T;
+      VectorXd residualCamera(9);
+      MatrixXd tmpP_inv(9, 9);
       //1.  IMU constrains
       for (int i = numOfState - 2; i >= numOfState - 3; i--)
       {
@@ -475,25 +483,25 @@ void SlamSystem::twoWayMarginalize()
         if (k1 >= slidingWindowSize){
           k1 -= slidingWindowSize;
         }
-        Vector3f t1 = R[k].transpose()*(T[k1] - T[k] + gravity_b0* SQ(slidingWindow[k]->timeIntegral)*0.5);
-        Vector3f t2 = R[k].transpose()*(R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral);
+        Vector3d t1 = R[k].transpose()*(T[k1] - T[k] + gravity_b0* SQ(slidingWindow[k]->timeIntegral)*0.5);
+        Vector3d t2 = R[k].transpose()*(R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral);
 
         H_k1_2_k.setZero();
         H_k1_2_k.block(0, 0, 3, 3) = -R[k].transpose();
-        H_k1_2_k.block(0, 3, 3, 3) = -Matrix3f::Identity()*slidingWindow[k]->timeIntegral;
+        H_k1_2_k.block(0, 3, 3, 3) = -Matrix3d::Identity()*slidingWindow[k]->timeIntegral;
         H_k1_2_k.block(0, 6, 3, 3) = vectorToSkewMatrix(t1);
-        H_k1_2_k.block(3, 3, 3, 3) = -Matrix3f::Identity();
+        H_k1_2_k.block(3, 3, 3, 3) = -Matrix3d::Identity();
         H_k1_2_k.block(3, 6, 3, 3) = vectorToSkewMatrix(t2);
         H_k1_2_k.block(6, 6, 3, 3) = -R[k1].transpose() * R[k];
 
         H_k1_2_k.block(0, 9, 3, 3) = R[k].transpose();
         H_k1_2_k.block(3, 12, 3, 3) = R[k].transpose() *  R[k1];
         H_k1_2_k.block(3, 15, 3, 3) = -R[k].transpose() *  R[k1] * vectorToSkewMatrix(vel[k1]);
-        H_k1_2_k.block(6, 15, 3, 3) = Matrix3f::Identity();
+        H_k1_2_k.block(6, 15, 3, 3) = Matrix3d::Identity();
 
         residualIMU.segment(0, 3) = t1 - vel[k] * slidingWindow[k]->timeIntegral - slidingWindow[k]->alpha_c_k;
         residualIMU.segment(3, 3) = t2 - vel[k] - slidingWindow[k]->beta_c_k;
-        residualIMU.segment(6, 3) = 2.0 * (Quaternionf(slidingWindow[k]->R_k1_k.transpose()) * Quaternionf(R[k].transpose() *  R[k1])).vec();
+        residualIMU.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[k]->R_k1_k.transpose()) * Quaterniond(R[k].transpose() *  R[k1])).vec();
 
         H_k1_2_k_T = H_k1_2_k.transpose();
         H_k1_2_k_T *= slidingWindow[k]->P_k.inverse();
@@ -525,25 +533,25 @@ void SlamSystem::twoWayMarginalize()
 
           //H_i_2_j.setZero();
           //H_i_2_j.block(0, 0, 6, 6).setIdentity();
-          //H_i_2_j.block(0, 6, 3, 3) = -Matrix3f::Identity();
+          //H_i_2_j.block(0, 6, 3, 3) = -Matrix3d::Identity();
           //H_i_2_j.block(3, 9, 3, 3) = -slidingWindow[currentStateID]->R_bk_2_b0.transpose() *  states[linkID].R_bk_2_b0;
 
           //residualCamera.segment(0, 3) = slidingWindow[currentStateID]->T_bk_2_b0 - states[linkID].T_bk_2_b0 - iter->T_bi_2_bj;
-          //residualCamera.segment(3, 3) = 2.0 * (Quaternionf(iter->R_bi_2_bj) * Quaternionf(states[linkID].R_bk_2_b0.transpose() *  slidingWindow[currentStateID]->R_bk_2_b0)).vec();
+          //residualCamera.segment(3, 3) = 2.0 * (Quaterniond(iter->R_bi_2_bj) * Quaterniond(states[linkID].R_bk_2_b0.transpose() *  slidingWindow[currentStateID]->R_bk_2_b0)).vec();
 
           //H_i_2_j_T = H_i_2_j.transpose();
           //H_i_2_j_T *= iter->P_inv ;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(6, 6, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3f::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
           H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
           residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]*slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
-          residualCamera.segment(6, 3) = 2.0 * (Quaternionf(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaternionf(R[linkID].transpose()*R[currentStateID])).vec();
+          residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
           tmpP_inv.setZero();
           tmpP_inv.block(0, 0, 3, 3) = slidingWindow[currentStateID]->cameraLink[linkID].P_inv.block(0, 0, 3, 3) ;
@@ -625,30 +633,33 @@ void SlamSystem::setNewMarginalzationFlag()
 
 void SlamSystem::BA()
 {
-    vector<Vector3f>T(slidingWindowSize);
-    vector<Vector3f>vel(slidingWindowSize);
-    vector<Matrix3f>R(slidingWindowSize);
+    vector<Vector3d>T(slidingWindowSize);
+    vector<Vector3d>vel(slidingWindowSize);
+    vector<Matrix3d>R(slidingWindowSize);
     for (int i = 0; i < slidingWindowSize; i++)
     {
-      R[i] = slidingWindow[i]->R_bk_2_b0;
-      T[i] = slidingWindow[i]->T_bk_2_b0;
-      vel[i] = slidingWindow[i]->v_bk;
+        if ( slidingWindow[i] != nullptr )
+        {
+            R[i] = slidingWindow[i]->R_bk_2_b0;
+            T[i] = slidingWindow[i]->T_bk_2_b0;
+            vel[i] = slidingWindow[i]->v_bk;
+        }
     }
 
     int sizeofH = 9 * numOfState;
-    MatrixXf HTH(sizeofH, sizeofH);
-    VectorXf HTb(sizeofH);
-    MatrixXf tmpHTH;
-    VectorXf tmpHTb;
+    MatrixXd HTH(sizeofH, sizeofH);
+    VectorXd HTb(sizeofH);
+    MatrixXd tmpHTH;
+    VectorXd tmpHTb;
 
-    MatrixXf H_k1_2_k(9, 18);
-    MatrixXf H_k1_2_k_T;
-    VectorXf residualIMU(9);
+    MatrixXd H_k1_2_k(9, 18);
+    MatrixXd H_k1_2_k_T;
+    VectorXd residualIMU(9);
 
-    MatrixXf H_i_2_j(9, 18);
-    MatrixXf H_i_2_j_T;
-    VectorXf residualCamera(9);
-    MatrixXf tmpP_inv(9, 9);
+    MatrixXd H_i_2_j(9, 18);
+    MatrixXd H_i_2_j_T;
+    VectorXd residualCamera(9);
+    MatrixXd tmpP_inv(9, 9);
 
     for (int iterNum = 0; iterNum < maxIterationBA; iterNum++)
     {
@@ -657,7 +668,7 @@ void SlamSystem::BA()
 
       //1. prior constraints
       int m_sz = margin.size;
-      VectorXf dx = VectorXf::Zero(STATE_SZ(numOfState - 1));
+      VectorXd dx = VectorXd::Zero(STATE_SZ(numOfState - 1));
 
       if (m_sz != (numOfState - 1)){
         assert("prior matrix goes wrong!!!");
@@ -672,7 +683,7 @@ void SlamSystem::BA()
         //dp, dv, dq
         dx.segment(STATE_SZ(i), 3) = T[k] - slidingWindow[k]->T_bk_2_b0;
         dx.segment(STATE_SZ(i) + 3, 3) = vel[k] - slidingWindow[k]->v_bk;
-        dx.segment(STATE_SZ(i) + 6, 3) = Quaternionf(Matrix3f(slidingWindow[k]->R_bk_2_b0.transpose() * R[k])).vec() * 2.0;
+        dx.segment(STATE_SZ(i) + 6, 3) = Quaterniond(Matrix3d(slidingWindow[k]->R_bk_2_b0.transpose() * R[k])).vec() * 2.0;
       }
       HTH.block(0, 0, STATE_SZ(m_sz), STATE_SZ(m_sz)) += margin.Ap.block(0, 0, STATE_SZ(m_sz), STATE_SZ(m_sz));
       HTb.segment(0, STATE_SZ(m_sz)) -= margin.Ap.block(0, 0, STATE_SZ(m_sz), STATE_SZ(m_sz))*dx;
@@ -692,26 +703,26 @@ void SlamSystem::BA()
         if (k1 >= slidingWindowSize){
           k1 -= slidingWindowSize;
         }
-        Vector3f t1 = R[k].transpose()*( T[k1] - T[k] + gravity_b0* SQ( slidingWindow[k]->timeIntegral )*0.5);
-        Vector3f t2 = R[k].transpose()*( R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral );
+        Vector3d t1 = R[k].transpose()*( T[k1] - T[k] + gravity_b0* SQ( slidingWindow[k]->timeIntegral )*0.5);
+        Vector3d t2 = R[k].transpose()*( R[k1] * vel[k1] + gravity_b0* slidingWindow[k]->timeIntegral );
 
         H_k1_2_k.setZero();
         H_k1_2_k.block(0, 0, 3, 3) = -R[k].transpose();
-        H_k1_2_k.block(0, 3, 3, 3) = -Matrix3f::Identity()* slidingWindow[k]->timeIntegral;
+        H_k1_2_k.block(0, 3, 3, 3) = -Matrix3d::Identity()* slidingWindow[k]->timeIntegral;
         H_k1_2_k.block(0, 6, 3, 3) = vectorToSkewMatrix( t1 );
-        H_k1_2_k.block(3, 3, 3, 3) = -Matrix3f::Identity();
+        H_k1_2_k.block(3, 3, 3, 3) = -Matrix3d::Identity();
         H_k1_2_k.block(3, 6, 3, 3) = vectorToSkewMatrix( t2 );
         H_k1_2_k.block(6, 6, 3, 3) = -R[k1].transpose() * R[k];
 
         H_k1_2_k.block(0, 9, 3, 3) = R[k].transpose();
         H_k1_2_k.block(3, 12, 3, 3) = R[k].transpose() *  R[k1];
         H_k1_2_k.block(3, 15, 3, 3) = -R[k].transpose() *  R[k1] * vectorToSkewMatrix( vel[k1] );
-        H_k1_2_k.block(6, 15, 3, 3) = Matrix3f::Identity();
+        H_k1_2_k.block(6, 15, 3, 3) = Matrix3d::Identity();
 
         residualIMU.segment(0, 3) = t1 - vel[k]* slidingWindow[k]->timeIntegral - slidingWindow[k]->alpha_c_k;
         residualIMU.segment(3, 3) = t2 - vel[k] - slidingWindow[k]->beta_c_k;
-        residualIMU.segment(6, 3) = 2.0 * ( Quaternionf( slidingWindow[k]->R_k1_k.transpose() )
-                                            * Quaternionf( R[k].transpose() *  R[k1] ) ).vec();
+        residualIMU.segment(6, 3) = 2.0 * ( Quaterniond( slidingWindow[k]->R_k1_k.transpose() )
+                                            * Quaterniond( R[k].transpose() *  R[k1] ) ).vec();
 
         H_k1_2_k_T = H_k1_2_k.transpose();
         H_k1_2_k_T *= slidingWindow[k]->P_k.inverse();
@@ -740,25 +751,25 @@ void SlamSystem::BA()
 
           //H_i_2_j.setZero();
           //H_i_2_j.block(0, 0, 6, 6).setIdentity();
-          //H_i_2_j.block(0, 6, 3, 3) = -Matrix3f::Identity();
+          //H_i_2_j.block(0, 6, 3, 3) = -Matrix3d::Identity();
           //H_i_2_j.block(3, 9, 3, 3) = -slidingWindow[currentStateID]->R_bk_2_b0.transpose() *  slidingWindow[linkID]->R_bk_2_b0;
 
           //residualCamera.segment(0, 3) = slidingWindow[currentStateID]->T_bk_2_b0 - slidingWindow[linkID]->T_bk_2_b0 - iter->T_bi_2_bj;
-          //residualCamera.segment(3, 3) = 2.0 * (Quaternionf(iter->R_bi_2_bj) * Quaternionf(slidingWindow[linkID]->R_bk_2_b0.transpose() *  slidingWindow[currentStateID]->R_bk_2_b0)).vec();
+          //residualCamera.segment(3, 3) = 2.0 * (Quaterniond(iter->R_bi_2_bj) * Quaterniond(slidingWindow[linkID]->R_bk_2_b0.transpose() *  slidingWindow[currentStateID]->R_bk_2_b0)).vec();
 
           //H_i_2_j_T = H_i_2_j.transpose();
           //H_i_2_j_T *= iter->P_inv ;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(6, 6, 3, 3) = Matrix3f::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3f::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
           H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
           residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]*slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
-          residualCamera.segment(6, 3) = 2.0 * (Quaternionf(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaternionf(R[linkID].transpose()*R[currentStateID])).vec();
+          residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
           tmpP_inv.setZero();
           tmpP_inv.block(0, 0, 3, 3) = slidingWindow[currentStateID]->cameraLink[linkID].P_inv.block(0, 0, 3, 3) ;
@@ -817,11 +828,12 @@ void SlamSystem::BA()
 
       //solve the BA
       //cout << "HTH\n" << HTH << endl;
-      LLT<MatrixXf> lltOfHTH = HTH.llt();
+
+      LLT<MatrixXd> lltOfHTH = HTH.llt();
       ComputationInfo info = lltOfHTH.info();
       if (info == Success)
       {
-        VectorXf dx = lltOfHTH.solve(HTb);
+        VectorXd dx = lltOfHTH.solve(HTb);
         //cout << dx.transpose() << endl ;
 
         //cout << "iteration " << iterNum << "\n" << dx << endl;
@@ -832,7 +844,7 @@ void SlamSystem::BA()
         pub_BA.publish( to_pub ) ;
 #endif
 
-        VectorXf errorUpdate(9);
+        VectorXd errorUpdate(9);
         for (int i = 0; i < numOfState; i++)
         {
           int k = head + i;
@@ -843,9 +855,9 @@ void SlamSystem::BA()
           T[k] += errorUpdate.segment(0, 3);
           vel[k] += errorUpdate.segment(3, 3);
 
-          Quaternionf q(R[k]);
-          Quaternionf dq;
-          dq.x() = errorUpdate(6) * 0.5 ;
+          Quaterniond q(R[k]);
+          Quaterniond dq;
+          dq.x() = errorUpdate(6) * 0.5;
           dq.y() = errorUpdate(7) * 0.5;
           dq.z() = errorUpdate(8) * 0.5;
           dq.w() = sqrt(1 - SQ(dq.x()) * SQ(dq.y()) * SQ(dq.z()));
@@ -858,7 +870,7 @@ void SlamSystem::BA()
         ROS_WARN("LLT error!!!");
         iterNum = maxIterationBA;
         //cout << HTH << endl;
-        //FullPivLU<MatrixXf> luHTH(HTH);
+        //FullPivLU<MatrixXd> luHTH(HTH);
         //printf("rank = %d\n", luHTH.rank() ) ;
         //HTH.rank() ;
       }
@@ -866,7 +878,7 @@ void SlamSystem::BA()
 
     // Include correction for information vector
     int m_sz = margin.size;
-    VectorXf r0 = VectorXf::Zero(STATE_SZ(numOfState - 1));
+    VectorXd r0 = VectorXd::Zero(STATE_SZ(numOfState - 1));
     for (int i = numOfState - 2; i >= 0; i--)
     {
       int k = head + i;
@@ -876,21 +888,24 @@ void SlamSystem::BA()
       //dp, dv, dq
       r0.segment(STATE_SZ(i), 3) = T[k] - slidingWindow[k]->T_bk_2_b0;
       r0.segment(STATE_SZ(i) + 3, 3) = vel[k] - slidingWindow[k]->v_bk;
-      r0.segment(STATE_SZ(i) + 6, 3) = Quaternionf(Matrix3f(slidingWindow[k]->R_bk_2_b0.transpose() * R[k])).vec() * 2.0;
+      r0.segment(STATE_SZ(i) + 6, 3) = Quaterniond(Matrix3d(slidingWindow[k]->R_bk_2_b0.transpose() * R[k])).vec() * 2.0;
     }
     margin.bp.segment(0, STATE_SZ(m_sz)) += margin.Ap.block(0, 0, STATE_SZ(m_sz), STATE_SZ(m_sz))*r0;
 
     //after all the iterations done
     for (int i = 0; i < slidingWindowSize; i++)
     {
-      slidingWindow[i]->T_bk_2_b0 = T[i];
-      slidingWindow[i]->v_bk = vel[i];
-      slidingWindow[i]->R_bk_2_b0 = R[i];
+        if ( slidingWindow[i] != nullptr )
+        {
+            slidingWindow[i]->T_bk_2_b0 = T[i];
+            slidingWindow[i]->v_bk = vel[i];
+            slidingWindow[i]->R_bk_2_b0 = R[i];
+        }
     }
 }
 
 
-void SlamSystem::insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp, Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel )
+void SlamSystem::insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp, Matrix3d R, Vector3d T, Vector3d vel )
 {
     tail++ ;
     numOfState++;
@@ -903,7 +918,7 @@ void SlamSystem::insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTim
 }
 
 void SlamSystem::insertCameraLink(Frame* keyFrame, Frame* currentFrame,
-        const Matrix3f& R_k_2_c, const Vector3f& T_k_2_c, const MatrixXf& lastestATA )
+        const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c, const MatrixXd& lastestATA )
 {
     int id = currentFrame->id() ;
     keyFrame->cameraLinkList.push_back(id);
@@ -914,34 +929,34 @@ void SlamSystem::insertCameraLink(Frame* keyFrame, Frame* currentFrame,
 }
 
 
-void SlamSystem::processIMU(float dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity)
+void SlamSystem::processIMU(float dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity)
 {
-    Quaternionf dq;
+    Quaterniond dq;
     dq.x() = angular_velocity(0)*dt*0.5;
     dq.y() = angular_velocity(1)*dt*0.5;
     dq.z() = angular_velocity(2)*dt*0.5;
     dq.w() = sqrt(1 - SQ(dq.x()) * SQ(dq.y()) * SQ(dq.z()));
 
-    Matrix3f deltaR(dq);
+    Matrix3d deltaR(dq);
     //R_c_0 = R_c_0 * deltaR;
     //T_c_0 = ;
     Frame* current = slidingWindow[tail].get() ;
 
-    Matrix<float, 9, 9> F = Matrix<float, 9, 9>::Zero();
-    F.block<3, 3>(0, 3) = Matrix3f::Identity();
+    Matrix<double, 9, 9> F = Matrix<double, 9, 9>::Zero();
+    F.block<3, 3>(0, 3) = Matrix3d::Identity();
     F.block<3, 3>(3, 6) = -current->R_k1_k* vectorToSkewMatrix(linear_acceleration);
     F.block<3, 3>(6, 6) = -vectorToSkewMatrix(angular_velocity);
 
-    Matrix<float, 6, 6> Q = Matrix<float, 6, 6>::Zero();
+    Matrix<double, 6, 6> Q = Matrix<double, 6, 6>::Zero();
     Q.block<3, 3>(0, 0) = acc_cov;
     Q.block<3, 3>(3, 3) = gyr_cov;
 
-    Matrix<float, 9, 6> G = Matrix<float, 9, 6>::Zero();
+    Matrix<double, 9, 6> G = Matrix<double, 9, 6>::Zero();
     G.block<3, 3>(3, 0) = -current->R_k1_k;
-    G.block<3, 3>(6, 3) = -Matrix3f::Identity();
+    G.block<3, 3>(6, 3) = -Matrix3d::Identity();
 
-    current->P_k = (Matrix<float, 9, 9>::Identity() + dt * F)
-            * current->P_k * (Matrix<float, 9, 9>::Identity() + dt * F).transpose() + (dt * G) * Q * (dt * G).transpose();
+    current->P_k = (Matrix<double, 9, 9>::Identity() + dt * F)
+            * current->P_k * (Matrix<double, 9, 9>::Identity() + dt * F).transpose() + (dt * G) * Q * (dt * G).transpose();
     //current->R_k1_k = current->R_k1_k*deltaR;
     current->alpha_c_k += current->beta_c_k*dt + current->R_k1_k*linear_acceleration * dt * dt * 0.5 ;
     current->beta_c_k += current->R_k1_k*linear_acceleration*dt;
@@ -950,19 +965,19 @@ void SlamSystem::processIMU(float dt, const Vector3f&linear_acceleration, const 
 }
 
 void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
-                            ros::Time imageTimeStamp, Eigen::Matrix3f deltaR)
+                            ros::Time imageTimeStamp, Eigen::Matrix3d deltaR)
 {
 	// Create new frame
     std::shared_ptr<Frame> trackingNewFrame(
                 new Frame( frameID, width, height, K, imageTimeStamp.toSec(), img1.data,
-                           Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero() )
+                           Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() )
                 );
     if (  trackingReference->keyframe != currentKeyFrame.get() ){
          trackingReference->importFrame( currentKeyFrame.get() );
     }
 
     //initial guess
-    Sophus::SE3f RefToFrame_initialEstimate ;
+    SE3 RefToFrame_initialEstimate ;
     RefToFrame_initialEstimate.setRotationMatrix(  deltaR.transpose()*RefToFrame.rotationMatrix() );
     RefToFrame_initialEstimate.translation() =
             deltaR.transpose()*RefToFrame.translation() ;
@@ -974,10 +989,10 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
                                RefToFrame_initialEstimate );
 	gettimeofday(&tv_end, NULL);
 
-//    Eigen::Matrix3f R_k_2_c = RefToFrame.rotationMatrix();
-//    Eigen::Vector3f T_k_2_c = RefToFrame.translation();
-//    Matrix3f R_bk1_2_b0 = trackingReference->keyframe->R_bk_2_b0 * R_k_2_c.transpose();
-//    Vector3f T_bk1_2_b0 = trackingReference->keyframe->T_bk_2_b0 + R_bk1_2_b0*T_k_2_c ;
+//    Eigen::Matrix3d R_k_2_c = RefToFrame.rotationMatrix();
+//    Eigen::Vector3d T_k_2_c = RefToFrame.translation();
+//    Matrix3d R_bk1_2_b0 = trackingReference->keyframe->R_bk_2_b0 * R_k_2_c.transpose();
+//    Vector3d T_bk1_2_b0 = trackingReference->keyframe->T_bk_2_b0 + R_bk1_2_b0*T_k_2_c ;
 //    pubOdometry(-T_bk1_2_b0, R_bk1_2_b0, pub_odometry, pub_pose );
 //    pubPath(-T_bk1_2_b0, path_line, pub_path );
 
@@ -994,7 +1009,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 	// Keyframe selection
     if ( trackingReference->keyframe->numFramesTrackedOnThis > MIN_NUM_MAPPED )
 	{
-        Sophus::Vector3f dist = RefToFrame.translation() * currentKeyFrame->meanIdepth;
+        Sophus::Vector3d dist = RefToFrame.translation() * currentKeyFrame->meanIdepth;
         float minVal = 1.0f;
 
         lastTrackingClosenessScore = getRefFrameScore(dist.dot(dist), tracker->pointUsage, KFDistWeight, KFUsageWeight);
@@ -1018,11 +1033,11 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
     }
     FRAMEINFO& tmpFrameInfo = frameInfoList[tmpTail] ;
     tmpFrameInfo.t = imageTimeStamp ;
-    tmpFrameInfo.R_k_2_c = RefToFrame.rotationMatrix();
-    tmpFrameInfo.T_k_2_c = RefToFrame.translation();
+    tmpFrameInfo.R_k_2_c = RefToFrame.rotationMatrix().cast<double>();
+    tmpFrameInfo.T_k_2_c = RefToFrame.translation().cast<double>();
     tmpFrameInfo.trust = true ;
     tmpFrameInfo.keyFrameFlag = createNewKeyFrame ;
-    tmpFrameInfo.lastestATA = MatrixXf::Identity(6, 6)*100000 ;
+    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*10000 ;
     frameInfoListTail = tmpTail ;
     frameInfoList_mtx.unlock();
 

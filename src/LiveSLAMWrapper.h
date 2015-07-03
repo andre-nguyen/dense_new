@@ -82,7 +82,7 @@ public:
 
 	// initialization stuff
 	bool isInitialized;
-    Eigen::Vector3f gravity_b0 ;
+    Eigen::Vector3d gravity_b0 ;
 
 	// monoOdometry
 	SlamSystem* monoOdometry;

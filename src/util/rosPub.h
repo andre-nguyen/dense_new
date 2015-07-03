@@ -39,10 +39,10 @@
 
 using namespace Eigen;
 
-inline void pubOdometry(const Vector3f& p, const Matrix3f& R, ros::Publisher& pub_odometry, ros::Publisher& pub_pose )
+inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pub_odometry, ros::Publisher& pub_pose )
 {
     nav_msgs::Odometry odometry;
-    Eigen::Quaternionf q(R) ;
+    Eigen::Quaterniond q(R) ;
 
     odometry.header.stamp = ros::Time::now();
     odometry.header.frame_id = "world";
@@ -62,7 +62,7 @@ inline void pubOdometry(const Vector3f& p, const Matrix3f& R, ros::Publisher& pu
     pub_pose.publish(pose_stamped);
 }
 
-inline void pubPath(const Vector3f& p,
+inline void pubPath(const Vector3d& p,
                     int kind,
                     visualization_msgs::Marker& path_line,
                     ros::Publisher& pub_path )

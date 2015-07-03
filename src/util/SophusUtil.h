@@ -22,7 +22,7 @@
 
 #include "sophus/sim3.hpp"
 #include "sophus/se3.hpp"
-#define SOPHUS_USE_FLOAT
+//#define SOPHUS_USE_FLOAT
 
 
 // Typedef and conversion macro for Eigen matrices to currently used type.

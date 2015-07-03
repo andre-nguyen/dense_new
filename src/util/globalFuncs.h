@@ -161,9 +161,9 @@ inline float SQ(float a){
     return a*a;
 }
 
-inline Eigen::Matrix3f vectorToSkewMatrix(const Eigen::Vector3f& w)
+inline Eigen::Matrix3d vectorToSkewMatrix(const Eigen::Vector3d& w)
 {
-  Eigen::Matrix3f skewW(3, 3);
+  Eigen::Matrix3d skewW(3, 3);
   skewW(0, 0) = skewW(1, 1) = skewW(2, 2) = 0;
   skewW(0, 1) = -w(2);
   skewW(1, 0) = w(2);
