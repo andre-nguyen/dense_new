@@ -27,12 +27,8 @@ namespace lsd_slam
 
 int privateFrameAllocCount = 0;
 
-
-
-
-
 Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-             const unsigned char* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel )
+             const unsigned char* image, Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel )
 {
     initialize(id, width, height, K, timestamp);
 
@@ -53,6 +49,9 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 
     //set the imu_link_Flag
     imuLinkFlag = true;
+
+    //reset the camera link list
+    cameraLinkList.clear() ;
 	
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	float* maxPt = data.image[0] + data.width[0]*data.height[0];
@@ -63,21 +62,6 @@ Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double tim
 		image++;
 	}
 
-	data.imageValid[0] = true;
-
-	privateFrameAllocCount++;
-
-	if(enablePrintDebugInfo && printMemoryDebugInfo)
-		printf("ALLOCATED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
-}
-
-Frame::Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-             const float* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel )
-{
-	initialize(id, width, height, K, timestamp);
-	
-	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
 	data.imageValid[0] = true;
 
 	privateFrameAllocCount++;

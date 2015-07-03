@@ -159,4 +159,6 @@ cv::Mat getVarRedGreenPlot(const float* idepthVar, const float* gray, int width,
 
 	return res;
 }
+
+
 }

@@ -27,7 +27,7 @@
 #include "unordered_set"
 #include "../util/settings.h"
 #include "opencv2/opencv.hpp"
-
+#include "types.h"
 
 
 
@@ -47,13 +47,8 @@ public:
 	friend class FrameMemory;
 
     Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-          const unsigned char* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel );
-
-    Frame(int id, int width, int height, const Eigen::Matrix3f& K, double timestamp,
-          const float* image, Eigen::Matrix3f& R, Eigen::Vector3f& T, Eigen::Vector3f& vel);
-
+          const unsigned char* image, Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel );
 	~Frame();
-	
 
 	/** Calculates mean information for statistical purposes. */
 	void calculateMeanInformation();
@@ -167,6 +162,9 @@ public:
     float timeIntegral;
     bool imuLinkFlag;
     bool keyFrameFlag;
+
+    CAMERALINK cameraLink[slidingWindowSize];
+    std::list<int>cameraLinkList;
 
 private:
 

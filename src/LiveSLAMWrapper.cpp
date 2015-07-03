@@ -56,7 +56,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, 
 	imageSeqNumber = 0;
     image0Buf.clear();
     image1Buf.clear();
-    imuBuf.clear();
+    imuQueue.clear();
 }
 
 
@@ -72,17 +72,14 @@ LiveSLAMWrapper::~LiveSLAMWrapper()
 	}
     image0Buf.clear();
     image1Buf.clear();
-    imuBuf.clear();
+    imuQueue.clear();
 }
 
 void LiveSLAMWrapper::popAndSetGravity()
 {
     unsigned int image0BufSize ;
     unsigned int image1BufSize ;
-    std::list<ImageMeasurement>::iterator iter0 ;
-    std::list<ImageMeasurement>::iterator iter1 ;
     std::list<ImageMeasurement>::reverse_iterator reverse_iterImage ;
-    std::list<visensor_node::visensor_imu>::iterator currentIMU_iter;
     ros::Time tImage ;
     ros::Rate r(100) ;
 
@@ -106,106 +103,280 @@ void LiveSLAMWrapper::popAndSetGravity()
         if ( reverse_iterImage->t < tImage ){
             tImage = reverse_iterImage->t ;
         }
-        iter0 = image0Buf.begin();
-        iter1 = image1Buf.begin();
-        while ( iter0->t < tImage ){
-            iter0 = image0Buf.erase( iter0 ) ;
+        pImage0Iter = image0Buf.begin();
+        pImage1Iter = image1Buf.begin();
+        while ( pImage0Iter->t < tImage ){
+            pImage0Iter = image0Buf.erase( pImage0Iter ) ;
         }
-        while ( iter1->t < tImage ){
-            iter1 = image1Buf.erase( iter1 ) ;
+        while ( pImage1Iter->t < tImage ){
+            pImage1Iter = image1Buf.erase( pImage1Iter ) ;
         }
         image0_queue_mtx.unlock();
         image1_queue_mtx.unlock();
 
         imu_queue_mtx.lock();
         int imuNum = 0;
-        currentIMU_iter = imuBuf.begin() ;
+        currentIMU_iter = imuQueue.begin() ;
         while( currentIMU_iter->header.stamp < tImage )
         {
             imuNum++;
             gravity_b0(0) += currentIMU_iter->linear_acceleration.x;
             gravity_b0(1) += currentIMU_iter->linear_acceleration.y;
             gravity_b0(2) += currentIMU_iter->linear_acceleration.z;
-            currentIMU_iter = imuBuf.erase(currentIMU_iter);
+            currentIMU_iter = imuQueue.erase(currentIMU_iter);
         }
         imu_queue_mtx.unlock();
         gravity_b0 /= imuNum ;
+        //gravity_b0 = -gravity_b0 ;
         break ;
     }
     std::cout << "gravity_b0 =\n" ;
     std::cout << gravity_b0 << "\n" ;
 }
 
+
+void LiveSLAMWrapper::BALoop()
+{
+    ros::Rate BARate(2000) ;
+    list<ImageMeasurement>::iterator iterImage ;
+    std::list<visensor_node::visensor_imu>::iterator iterIMU ;
+    cv::Mat image0 ;
+    cv::Mat image1 ;
+    cv::Mat gradientMapForDebug(height, width, CV_8UC3) ;
+    sensor_msgs::Image msg;
+    double t ;
+
+    while ( nh.ok() )
+    {
+        monoOdometry->frameInfoList_mtx.lock();
+        int ttt = (monoOdometry->frameInfoListTail-monoOdometry->frameInfoListHead);
+        if ( ttt < 0 ){
+            ttt += frameInfoListSize ;
+        }
+        //printf("[BA thread] sz=%d\n", ttt ) ;
+        if ( ttt < 1 ){
+            monoOdometry->frameInfoList_mtx.unlock();
+            BARate.sleep() ;
+            continue ;
+        }
+        for ( int sz ; ; )
+        {
+            monoOdometry->frameInfoListHead++ ;
+            if ( monoOdometry->frameInfoListHead >= frameInfoListSize ){
+                monoOdometry->frameInfoListHead -= frameInfoListSize ;
+            }
+            sz = monoOdometry->frameInfoListTail - monoOdometry->frameInfoListHead ;
+            if ( sz == 0 ){
+                break ;
+            }
+            if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag ){
+                break ;
+            }
+        }
+        ros::Time imageTimeStamp = monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].t ;
+        monoOdometry->frameInfoList_mtx.unlock();
+
+        //Pop out the image list
+        image1_queue_mtx.lock();
+        iterImage = image1Buf.begin() ;
+        while ( iterImage->t < imageTimeStamp ){
+            iterImage = image1Buf.erase( iterImage ) ;
+        }
+        image1 = iterImage->image.clone();
+        image1_queue_mtx.unlock();
+
+        image0_queue_mtx.lock();
+        iterImage = image0Buf.begin() ;
+        while ( iterImage->t < imageTimeStamp ){
+            iterImage = image0Buf.erase( iterImage ) ;
+        }
+        image0 = iterImage->image.clone();
+        image0_queue_mtx.unlock();
+
+        imu_queue_mtx.lock();
+        iterIMU = imuQueue.begin() ;
+        Vector3f linear_acceleration;
+        Vector3f angular_velocity;
+
+        //std::cout << "imageTime=" << imageTimeStamp << std::endl;
+        while ( iterIMU->header.stamp < imageTimeStamp )
+        {
+            linear_acceleration(0) = iterIMU->linear_acceleration.x;
+            linear_acceleration(1) = iterIMU->linear_acceleration.y;
+            linear_acceleration(2) = iterIMU->linear_acceleration.z;
+            angular_velocity(0) = iterIMU->angular_velocity.x;
+            angular_velocity(1) = iterIMU->angular_velocity.y;
+            angular_velocity(2) = iterIMU->angular_velocity.z;
+
+            //linear_acceleration = -linear_acceleration;
+            //angular_velocity = -angular_velocity ;
+
+            double pre_t = iterIMU->header.stamp.toSec();
+            iterIMU = imuQueue.erase(iterIMU);
+
+            //std::cout << imuQueue.size() <<" "<< iterIMU->header.stamp << std::endl;
+
+            double next_t = iterIMU->header.stamp.toSec();
+            float dt = next_t - pre_t ;
+
+//            std::cout << linear_acceleration.transpose() << std::endl ;
+//            std::cout << angular_velocity.transpose() << std::endl ;
+            monoOdometry->processIMU( dt, linear_acceleration, angular_velocity );
+        }
+        imu_queue_mtx.unlock();
+
+        //propagate the last frame info to the current frame
+        Frame* lastFrame = monoOdometry->slidingWindow[monoOdometry->tail].get();
+        float dt = lastFrame->timeIntegral;
+
+        Vector3f T_bk1_2_b0 = lastFrame->T_bk_2_b0 - 0.5 * gravity_b0 * dt *dt
+                + lastFrame->R_bk_2_b0*(lastFrame->v_bk * dt  + lastFrame->alpha_c_k);
+        Vector3f v_bk1 = lastFrame->R_k1_k.transpose() *
+                (lastFrame->v_bk - lastFrame->R_bk_2_b0.transpose() * gravity_b0 * dt
+                 + lastFrame->beta_c_k);
+        Matrix3f R_bk1_2_b0 = lastFrame->R_bk_2_b0 * lastFrame->R_k1_k;
+
+        monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp, R_bk1_2_b0, T_bk1_2_b0, v_bk1);
+        Frame* currentFrame = monoOdometry->slidingWindow[monoOdometry->tail].get();
+        Frame* keyFrame = monoOdometry->currentKeyFrame.get();
+        if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag )
+        {
+            //prepare key frame
+            cv::Mat disparity, depth ;
+            monoOdometry->bm_(image1, image0, disparity, CV_32F);
+            calculateDepthImage(disparity, depth, 0.11, fx );
+            currentFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
+
+            //pub debugMap
+            cv::cvtColor(image1, gradientMapForDebug, CV_GRAY2BGR);
+            monoOdometry->generateDubugMap(currentFrame, gradientMapForDebug);
+            msg.header.stamp = imageTimeStamp;
+            sensor_msgs::fillImage(msg, sensor_msgs::image_encodings::BGR8, height,
+                                   width, width*3, gradientMapForDebug.data );
+            monoOdometry->pub_gradientMapForDebug.publish(msg) ;
+
+            //set key frame
+            monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[monoOdometry->tail] ;
+            monoOdometry->currentKeyFrame->keyFrameFlag = true ;
+            monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
+            //reset the initial guess
+            monoOdometry->RefToFrame = Sophus::SE3f() ;
+
+            //unlock dense tracking
+            monoOdometry->tracking_mtx.lock();
+            monoOdometry->lock_densetracking = false;
+            monoOdometry->tracking_mtx.unlock();
+        }
+        if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].trust )
+        {
+            monoOdometry->insertCameraLink(keyFrame, currentFrame,
+                          monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].R_k_2_c,
+                          monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].T_k_2_c,
+                          monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].lastestATA );
+        }
+
+        //BA
+        t = (double)cvGetTickCount()  ;
+        //monoOdometry->BA();
+        printf("BA cost time: %f\n", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
+        t = (double)cvGetTickCount()  ;
+
+        cout << "[BA-]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
+        cout << "[BA-]current Velocity: " << currentFrame->v_bk.transpose() << endl;
+
+        //marginalziation
+        //monoOdometry->twoWayMarginalize();
+        //monoOdometry->setNewMarginalzationFlag();
+
+        //    pubOdometry(-T_bk1_2_b0, R_bk1_2_b0, pub_odometry, pub_pose );
+        //    pubPath(-T_bk1_2_b0, path_line, pub_path );
+
+        pubOdometry(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+                monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
+                monoOdometry->pub_odometry, monoOdometry->pub_pose );
+        pubPath(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+                monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag,
+                monoOdometry->path_line, monoOdometry->pub_path);
+    }
+}
+
 void LiveSLAMWrapper::Loop()
 {
+    /*
     unsigned int image0BufSize ;
     unsigned int image1BufSize ;
     unsigned int imuBufSize ;
-    std::list<ImageMeasurement>::iterator iter0 ;
-    std::list<ImageMeasurement>::iterator iter1 ;
+    */
     std::list<visensor_node::visensor_imu>::reverse_iterator reverse_iterImu ;
-    std::list<visensor_node::visensor_imu>::iterator currentIMU_iter;
-    ros::Time tImage ;
+    std::list<ImageMeasurement>::iterator  pIter ;
+    ros::Time imageTimeStamp ;
     cv::Mat   image0 ;
     cv::Mat   image1 ;
     ros::Rate r(1000.0);
     while ( nh.ok() )
     {
+        monoOdometry->tracking_mtx.lock();
+        bool tmpFlag = monoOdometry->lock_densetracking ;
+        monoOdometry->tracking_mtx.unlock();
+        //printf("tmpFlag = %d\n", tmpFlag ) ;
+        if ( tmpFlag == true ){
+            r.sleep() ;
+            continue ;
+        }
+        //puts("111") ;
         image0_queue_mtx.lock();
         image1_queue_mtx.lock();
         imu_queue_mtx.lock();
-        image0BufSize = image0Buf.size();
-        image1BufSize = image1Buf.size();
-        imuBufSize = imuBuf.size();
-        //printf("%d %d %d\n",image0BufSize, image1BufSize, imuBufSize ) ;
-        if ( image0BufSize == 0 || image1BufSize == 0 || imuBufSize == 0 ){
+        pIter = pImage1Iter ;
+        pIter++ ;
+        if ( pIter == image1Buf.end() ){
             image0_queue_mtx.unlock();
             image1_queue_mtx.unlock();
             imu_queue_mtx.unlock();
             r.sleep() ;
             continue ;
         }
-        iter0 = image0Buf.begin();
-        iter1 = image1Buf.begin();
-        while ( iter1 != image1Buf.end() && iter0->t > iter1->t ){
-            iter1 =  image1Buf.erase( iter1 ) ;
-        }
-        while ( iter0 != image0Buf.end() && iter0->t < iter1->t ){
-            iter0 =  image0Buf.erase( iter0 ) ;
-        }
-        if ( iter1 == image1Buf.end() || iter0 == image0Buf.end() ){
+        //puts("222") ;
+        pIter = pImage0Iter ;
+        pIter++ ;
+        if ( pIter == image0Buf.end() ){
             image0_queue_mtx.unlock();
             image1_queue_mtx.unlock();
             imu_queue_mtx.unlock();
             r.sleep() ;
             continue ;
         }
-        tImage = iter0->t;
-        reverse_iterImu = imuBuf.rbegin() ;
-        if ( reverse_iterImu->header.stamp < tImage ){
+        //puts("333") ;
+        imageTimeStamp = pIter->t ;
+        reverse_iterImu = imuQueue.rbegin() ;
+//        printf("%d %d\n", imuQueue.size() < 10, reverse_iterImu->header.stamp <= imageTimeStamp ) ;
+        if ( imuQueue.size() < 1 || reverse_iterImu->header.stamp < imageTimeStamp ){
             image0_queue_mtx.unlock();
             image1_queue_mtx.unlock();
             imu_queue_mtx.unlock();
             r.sleep() ;
             continue ;
         }
-        imu_queue_mtx.unlock();
+        //std::cout << imageTimeStamp.toNSec() << "\n" ;
+        //std::cout << "[dt-image] " << imageTimeStamp << std::endl ;
+        //std::cout << "[dt-imu] " << reverse_iterImu->header.stamp << " " << imuQueue.size() << std::endl ;
+        ros::Time preTime = pImage1Iter->t ;
+        pImage1Iter++ ;
+        pImage0Iter++ ;
 
-        image0 = iter0->image.clone();
-        image1 = iter1->image.clone();
-        iter1 =  image1Buf.erase( iter1 ) ;
-        iter0 =  image0Buf.erase( iter0 ) ;
-        image0_queue_mtx.unlock();
+        imu_queue_mtx.unlock();
+        image1 = pImage1Iter->image.clone();
+        image0 = pImage0Iter->image.clone();
         image1_queue_mtx.unlock();
+        image0_queue_mtx.unlock();
 
         imu_queue_mtx.lock();
-        currentIMU_iter = imuBuf.begin() ;
         Quaternionf q, dq ;
         q.setIdentity() ;
-        while ( currentIMU_iter->header.stamp < tImage )
+        while ( currentIMU_iter != imuQueue.end() && currentIMU_iter->header.stamp < imageTimeStamp )
         {
             float pre_t = currentIMU_iter->header.stamp.toSec();
-            currentIMU_iter = imuBuf.erase(currentIMU_iter);
+            currentIMU_iter++ ;
             float next_t = currentIMU_iter->header.stamp.toSec();
             float dt = next_t - pre_t ;
 
@@ -220,29 +391,34 @@ void LiveSLAMWrapper::Loop()
 
 		// process image
 		//Util::displayImage("MyVideo", image.data);
-        newImageCallback(image0, image1, tImage);
-	}
-}
+        Matrix3f deltaR(q) ;
+
+        //puts("444") ;
 
 
-void LiveSLAMWrapper::newImageCallback(const cv::Mat& img0, const cv::Mat& img1, ros::Time imgTime)
-{
-	++ imageSeqNumber;
+        ++imageSeqNumber;
+        assert(image0.elemSize() == 1);
+        assert(image1.elemSize() == 1);
+        assert(fx != 0 || fy != 0);
+        if(!isInitialized)
+        {
+            monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp,
+                                      Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero() );
+            cv::Mat disparity, depth ;
+            monoOdometry->bm_(image1, image0, disparity, CV_32F);
+            calculateDepthImage(disparity, depth, 0.11, fx );
+            monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[0] ;
+            monoOdometry->currentKeyFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
 
-	// Assert that we work with 8 bit images
-    assert(img1.elemSize() == 1);
-    assert(img0.elemSize() == 1);
-	assert(fx != 0 || fy != 0);
-
-    // need to initialize
-	if(!isInitialized)
-    {
-        monoOdometry->gtDepthInit(img0, img1, imgTime.toSec(), 1);
-		isInitialized = true;
-	}
-	else if(isInitialized && monoOdometry != nullptr)
-	{
-        monoOdometry->trackFrame(img0, img1, imageSeqNumber, imgTime.toSec() );
+            monoOdometry->currentKeyFrame->keyFrameFlag = true ;
+            monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
+            monoOdometry->RefToFrame = Sophus::SE3f() ;
+            isInitialized = true;
+        }
+        else if(isInitialized && monoOdometry != nullptr)
+        {
+            monoOdometry->trackFrame(image0, image1, imageSeqNumber, imageTimeStamp, deltaR );
+        }
 	}
 }
 
@@ -267,24 +443,5 @@ void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
 	outFile->write(buffer,num);
 	outFile->flush();
 }
-
-//void LiveSLAMWrapper::resetAll()
-//{
-//	if(monoOdometry != nullptr)
-//	{
-//		delete monoOdometry;
-//		printf("Deleted SlamSystem Object!\n");
-
-//		Sophus::Matrix3f K;
-//		K << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
-//        monoOdometry = new SlamSystem(width,height, K, nh );
-
-//	}
-//	imageSeqNumber = 0;
-//	isInitialized = false;
-
-//	Util::closeAllWindows();
-
-//}
 
 }

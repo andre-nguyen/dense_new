@@ -57,12 +57,12 @@ public:
 
 	/** Runs the main processing loop. Will never return. */
 	void Loop();
+
+    /** Runs the main processing loop. Will never return. */
+    void BALoop();
 	
 //	/** Resets everything, starting the odometry from the beginning again. */
 //	void resetAll();
-
-	/** Callback function for new RGB images. */
-    void newImageCallback(const cv::Mat& img0, const cv::Mat &img1, ros::Time imgTime);
 
 	/** Writes the given time and pose to the outFile. */
 	void logCameraPose(const SE3& camToWorld, double time);
@@ -70,10 +70,14 @@ public:
 	inline SlamSystem* getSlamSystem() {return monoOdometry;}
 	
     std::list<ImageMeasurement> image0Buf;
-    boost::mutex image0_queue_mtx;
     std::list<ImageMeasurement> image1Buf;
+    std::list<ImageMeasurement>::iterator pImage0Iter;
+    std::list<ImageMeasurement>::iterator pImage1Iter;
+    boost::mutex image0_queue_mtx;
     boost::mutex image1_queue_mtx;
-    std::list<visensor_node::visensor_imu> imuBuf;
+
+    std::list<visensor_node::visensor_imu> imuQueue;
+    std::list<visensor_node::visensor_imu>::iterator currentIMU_iter;
     boost::mutex imu_queue_mtx;
 
 	// initialization stuff

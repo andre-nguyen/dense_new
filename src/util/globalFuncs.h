@@ -22,15 +22,15 @@
 #include <opencv2/core/core.hpp>
 #include "../util/settings.h"
 #include "../util/SophusUtil.h"
-
+#include "../DataStructures/Frame.h"
 
 namespace lsd_slam
 {
 
-template< typename T >
-class NotifyBuffer;
+//template< typename T >
+//class NotifyBuffer;
 
-class Frame;
+//class Frame;
 
 SE3 SE3CV2Sophus(const cv::Mat& R, const cv::Mat& t);
 
@@ -159,4 +159,18 @@ inline void calculateDepthImage(cv::Mat disparity, cv::Mat& depthImage, float ba
 
 inline float SQ(float a){
     return a*a;
+}
+
+inline Eigen::Matrix3f vectorToSkewMatrix(const Eigen::Vector3f& w)
+{
+  Eigen::Matrix3f skewW(3, 3);
+  skewW(0, 0) = skewW(1, 1) = skewW(2, 2) = 0;
+  skewW(0, 1) = -w(2);
+  skewW(1, 0) = w(2);
+  skewW(0, 2) = w(1);
+  skewW(2, 0) = -w(1);
+  skewW(1, 2) = -w(0);
+  skewW(2, 1) = w(0);
+
+  return skewW;
 }

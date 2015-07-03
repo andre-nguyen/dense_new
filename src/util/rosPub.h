@@ -62,13 +62,30 @@ inline void pubOdometry(const Vector3f& p, const Matrix3f& R, ros::Publisher& pu
     pub_pose.publish(pose_stamped);
 }
 
-inline void pubPath(const Vector3f& p, visualization_msgs::Marker& path_line, ros::Publisher& pub_path )
+inline void pubPath(const Vector3f& p,
+                    int kind,
+                    visualization_msgs::Marker& path_line,
+                    ros::Publisher& pub_path )
 {
     geometry_msgs::Point pose_p;
+    std_msgs::ColorRGBA color_p ;
     pose_p.x = p(0);
     pose_p.y = p(1);
     pose_p.z = p(2);
-
+    if ( kind == 0 ){
+        color_p.r = 1.0 ;
+        color_p.g = 0.0 ;
+        color_p.b = 0.0 ;
+        color_p.a = 1.0 ;
+    }
+    else
+    {
+        color_p.r = 0.0 ;
+        color_p.g = 1.0 ;
+        color_p.b = 0.0 ;
+        color_p.a = 1.0 ;
+    }
+    path_line.colors.push_back(color_p);
     path_line.points.push_back(pose_p);
     path_line.scale.x = 0.01 ;
     pub_path.publish(path_line);

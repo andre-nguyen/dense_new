@@ -98,13 +98,18 @@ void image1CallBack(const sensor_msgs::ImageConstPtr& msg)
 void imuCallBack(const visensor_node::visensor_imu& imu_msg )
 {
     globalLiveSLAM->imu_queue_mtx.lock();
-    globalLiveSLAM->imuBuf.push_back( imu_msg );
+    globalLiveSLAM->imuQueue.push_back( imu_msg );
     globalLiveSLAM->imu_queue_mtx.unlock();
 }
 
 void process_image()
 {
     globalLiveSLAM->Loop();
+}
+
+void process_BA()
+{
+    globalLiveSLAM->BALoop();
 }
 
 int main( int argc, char** argv )
@@ -133,9 +138,11 @@ int main( int argc, char** argv )
     globalLiveSLAM = &slamNode ;
     globalLiveSLAM->popAndSetGravity();
     boost::thread ptrProcessImageThread = boost::thread(&process_image);
+    boost::thread ptrProcessBAThread = boost::thread(&process_BA);
 
     ros::spin() ;
     ptrProcessImageThread.join();
+    ptrProcessBAThread.join();
 
 	return 0;
 }

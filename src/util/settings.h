@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <string>
+#include "EigenCoreInclude.h"
 
 #ifndef ENABLE_SSE
 #define ENABLE_SSE
@@ -55,7 +56,14 @@ namespace lsd_slam
 #define slidingWindowSize 20
 #define	INDEX(i, j, n, m)		( (i)*(m) + (j)  )
 #define	STATE_SZ(i)		(  (i)*variablesNumInState )
-
+#define maxIterationBA 5
+const double PI = acos(-1.0);
+const float huber_r_v = 0.05 ;
+const float huber_r_w = 1.0/180.0*PI ;
+const Eigen::Matrix3f acc_cov = 1e-2 * Eigen::Matrix3f::Identity();
+const Eigen::Matrix3f gra_cov = 1e-6 * Eigen::Matrix3f::Identity();
+const Eigen::Matrix3f gyr_cov = 1e-4 * Eigen::Matrix3f::Identity();
+const int frameInfoListSize = 200 ;
 
 /** ============== constants for validity handeling ======================= */
 

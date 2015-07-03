@@ -34,6 +34,8 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include "util/marginalization.h"
+#include "util/globalFuncs.h"
+#include "DataStructures/types.h"
 
 namespace lsd_slam
 {
@@ -62,6 +64,7 @@ public:
     float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration, nAvgFindReferences;
     struct timeval lastHzUpdate;
     int head, tail ;
+    int numOfState ;
 
     ros::NodeHandle nh ;
     ros::Publisher pub_path ;
@@ -76,6 +79,13 @@ public:
     cv::StereoBM bm_ ;
     cv::Mat gradientMapForDebug ;
 
+    int frameInfoListHead, frameInfoListTail ;
+    FRAMEINFO frameInfoList[frameInfoListSize] ;
+    boost::mutex frameInfoList_mtx;
+
+    bool lock_densetracking = false ;
+    boost::mutex tracking_mtx;
+
     SlamSystem(int w, int h, Eigen::Matrix3f K, ros::NodeHandle& n);
 	SlamSystem(const SlamSystem&) = delete;
 	SlamSystem& operator=(const SlamSystem&) = delete;
@@ -83,26 +93,32 @@ public:
 
     void initRosPub();
     void generateDubugMap(Frame* currentFrame, cv::Mat& gradientMapForDebug ) ;
-    void gtDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int id);
+    void setDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int id);
 
 	// tracks a frame.
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-    void trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, double timestamp);
+    void trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, ros::Time imageTimeStamp, Eigen::Matrix3f deltaR);
 
     /** Returns the current pose estimate. */
     void debugDisplayDepthMap();
+    void BA() ;
+    void copyStateData(int preStateID );
     void twoWayMarginalize();
     void setNewMarginalzationFlag();
-    void processIMU(double dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity) ;
+    void insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp,
+                     Eigen::Matrix3f R, Eigen::Vector3f T, Eigen::Vector3f vel ) ;
+    void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
+            const Matrix3f& R_k_2_c, const Vector3f& T_k_2_c, const MatrixXf& lastestATA );
+    void processIMU(float dt, const Vector3f&linear_acceleration, const Vector3f &angular_velocity);
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.
 	SE3Tracker* tracker;
     std::shared_ptr<Frame> slidingWindow[slidingWindowSize] ;
     std::shared_ptr<Frame> currentKeyFrame;	// changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
-    std::shared_ptr<Frame> lastTrackedFrame;
+    //std::shared_ptr<Frame> lastTrackedFrame;
     bool createNewKeyFrame;
 
 	// ============= SHARED ENTITIES =============
