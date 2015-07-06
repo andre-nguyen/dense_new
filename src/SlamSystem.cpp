@@ -723,8 +723,17 @@ void SlamSystem::BA()
         residualIMU.segment(3, 3) = t2 - vel[k] - slidingWindow[k]->beta_c_k;
         residualIMU.segment(6, 3) = 2.0 * ( Quaterniond( slidingWindow[k]->R_k1_k.transpose() )
                                             * Quaterniond( R[k].transpose() *  R[k1] ) ).vec();
+//        std::cout << "k\n" << k << std::endl ;
+//        std::cout << "k1\n" << k1 << std::endl ;
+//        std::cout << "gravity_b0\n" << gravity_b0 << std::endl ;
+//        std::cout << "slidingWindow[k]->timeIntegral\n" << slidingWindow[k]->timeIntegral << std::endl ;
 
-        H_k1_2_k_T = H_k1_2_k.transpose();
+//        std::cout << "residualIMU\n" << residualIMU << std::endl ;
+//        std::cout << "t2\n" << t2 << std::endl ;
+//        std::cout << "vel[k] \n" << vel[k]  << std::endl ;
+//        std::cout << "slidingWindow[k]->beta_c_k \n" << slidingWindow[k]->beta_c_k  << std::endl ;
+
+         H_k1_2_k_T = H_k1_2_k.transpose();
         H_k1_2_k_T *= slidingWindow[k]->P_k.inverse();
 
         HTH.block(i * 9, i * 9, 18, 18) += H_k1_2_k_T  *  H_k1_2_k;
@@ -733,6 +742,7 @@ void SlamSystem::BA()
 
       //3. camera constraints
 //      int numList = 0;
+
       for (int i = 0; i < numOfState; i++)
       {
         int currentStateID = head + i;
@@ -834,7 +844,8 @@ void SlamSystem::BA()
       if (info == Success)
       {
         VectorXd dx = lltOfHTH.solve(HTb);
-        //cout << dx.transpose() << endl ;
+ //       cout << iterNum << endl ;
+ //       cout << dx.transpose() << endl ;
 
         //cout << "iteration " << iterNum << "\n" << dx << endl;
 #ifdef DEBUG_INFO
@@ -929,39 +940,39 @@ void SlamSystem::insertCameraLink(Frame* keyFrame, Frame* currentFrame,
 }
 
 
-void SlamSystem::processIMU(float dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity)
+void SlamSystem::processIMU(double dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity)
 {
     Quaterniond dq;
-    dq.x() = angular_velocity(0)*dt*0.5;
-    dq.y() = angular_velocity(1)*dt*0.5;
-    dq.z() = angular_velocity(2)*dt*0.5;
-    dq.w() = sqrt(1 - SQ(dq.x()) * SQ(dq.y()) * SQ(dq.z()));
 
-    Matrix3d deltaR(dq);
-    //R_c_0 = R_c_0 * deltaR;
-    //T_c_0 = ;
-    Frame* current = slidingWindow[tail].get() ;
+     dq.x() = angular_velocity(0)*dt*0.5;
+     dq.y() = angular_velocity(1)*dt*0.5;
+     dq.z() = angular_velocity(2)*dt*0.5;
+     dq.w() = sqrt(1 - SQ(dq.x()) * SQ(dq.y()) * SQ(dq.z()));
 
-    Matrix<double, 9, 9> F = Matrix<double, 9, 9>::Zero();
-    F.block<3, 3>(0, 3) = Matrix3d::Identity();
-    F.block<3, 3>(3, 6) = -current->R_k1_k* vectorToSkewMatrix(linear_acceleration);
-    F.block<3, 3>(6, 6) = -vectorToSkewMatrix(angular_velocity);
+     Matrix3d deltaR(dq);
+     //R_c_0 = R_c_0 * deltaR;
+     //T_c_0 = ;
+     Frame *current = slidingWindow[tail].get();
 
-    Matrix<double, 6, 6> Q = Matrix<double, 6, 6>::Zero();
-    Q.block<3, 3>(0, 0) = acc_cov;
-    Q.block<3, 3>(3, 3) = gyr_cov;
+     Matrix<double, 9, 9> F = Matrix<double, 9, 9>::Zero();
+     F.block<3, 3>(0, 3) = Matrix3d::Identity();
+     F.block<3, 3>(3, 6) = -current->R_k1_k* vectorToSkewMatrix(linear_acceleration);
+     F.block<3, 3>(6, 6) = -vectorToSkewMatrix(angular_velocity);
 
-    Matrix<double, 9, 6> G = Matrix<double, 9, 6>::Zero();
-    G.block<3, 3>(3, 0) = -current->R_k1_k;
-    G.block<3, 3>(6, 3) = -Matrix3d::Identity();
+     Matrix<double, 6, 6> Q = Matrix<double, 6, 6>::Zero();
+     Q.block<3, 3>(0, 0) = acc_cov;
+     Q.block<3, 3>(3, 3) = gyr_cov;
 
-    current->P_k = (Matrix<double, 9, 9>::Identity() + dt * F)
-            * current->P_k * (Matrix<double, 9, 9>::Identity() + dt * F).transpose() + (dt * G) * Q * (dt * G).transpose();
-    //current->R_k1_k = current->R_k1_k*deltaR;
-    current->alpha_c_k += current->beta_c_k*dt + current->R_k1_k*linear_acceleration * dt * dt * 0.5 ;
-    current->beta_c_k += current->R_k1_k*linear_acceleration*dt;
-    current->R_k1_k = current->R_k1_k*deltaR;
-    current->timeIntegral += dt;
+     Matrix<double, 9, 6> G = Matrix<double, 9, 6>::Zero();
+     G.block<3, 3>(3, 0) = -current->R_k1_k;
+     G.block<3, 3>(6, 3) = -Matrix3d::Identity();
+
+     current->P_k = (Matrix<double, 9, 9>::Identity() + dt * F) * current->P_k * (Matrix<double, 9, 9>::Identity() + dt * F).transpose() + (dt * G) * Q * (dt * G).transpose();
+     //current->R_k1_k = current->R_k1_k*deltaR;
+     current->alpha_c_k += current->beta_c_k*dt + current->R_k1_k*linear_acceleration * dt * dt * 0.5 ;
+     current->beta_c_k += current->R_k1_k*linear_acceleration*dt;
+     current->R_k1_k = current->R_k1_k*deltaR;
+     current->timeIntegral += dt;
 }
 
 void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
@@ -1037,7 +1048,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
     tmpFrameInfo.T_k_2_c = RefToFrame.translation().cast<double>();
     tmpFrameInfo.trust = true ;
     tmpFrameInfo.keyFrameFlag = createNewKeyFrame ;
-    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*10000 ;
+    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*1000000 ;
     frameInfoListTail = tmpTail ;
     frameInfoList_mtx.unlock();
 

@@ -159,7 +159,7 @@ public:
     Eigen::Vector3d beta_c_k;//beta_k+1^k
     Eigen::Matrix3d R_k1_k;//q_k+1^k
     Eigen::Matrix<double, 9, 9> P_k;//P_k+1^k, covariance matrix
-    float timeIntegral;
+    double timeIntegral;
     bool imuLinkFlag;
     bool keyFrameFlag;
 

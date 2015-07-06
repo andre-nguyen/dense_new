@@ -84,7 +84,7 @@ void LiveSLAMWrapper::popAndSetGravity()
     ros::Rate r(100) ;
 
     gravity_b0.setZero() ;
-    while ( ros::ok() )
+    while ( nh.ok() )
     {
         ros::spinOnce() ;
         image0_queue_mtx.lock();
@@ -131,7 +131,26 @@ void LiveSLAMWrapper::popAndSetGravity()
         break ;
     }
     std::cout << "gravity_b0 =\n" ;
-    std::cout << gravity_b0 << "\n" ;
+    std::cout << gravity_b0.transpose() << "\n" ;
+    monoOdometry->gravity_b0 = gravity_b0 ;
+
+    imu_queue_mtx.unlock();
+    cv::Mat image1 = pImage1Iter->image.clone();
+    cv::Mat image0 = pImage0Iter->image.clone();
+    image1_queue_mtx.unlock();
+    image0_queue_mtx.unlock();
+
+    monoOdometry->insertFrame(imageSeqNumber, image1, tImage,
+                              Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
+    cv::Mat disparity, depth ;
+    monoOdometry->bm_(image1, image0, disparity, CV_32F);
+    calculateDepthImage(disparity, depth, 0.11, fx );
+    monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[0] ;
+    monoOdometry->currentKeyFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
+
+    monoOdometry->currentKeyFrame->keyFrameFlag = true ;
+    monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
+    monoOdometry->RefToFrame = Sophus::SE3() ;
 
     monoOdometry->margin.initPrior();
 }
@@ -151,7 +170,7 @@ void LiveSLAMWrapper::BALoop()
     while ( nh.ok() )
     {
         monoOdometry->frameInfoList_mtx.lock();
-        int ttt = (monoOdometry->frameInfoListTail-monoOdometry->frameInfoListHead);
+        int ttt = (monoOdometry->frameInfoListTail - monoOdometry->frameInfoListHead);
         if ( ttt < 0 ){
             ttt += frameInfoListSize ;
         }
@@ -213,13 +232,18 @@ void LiveSLAMWrapper::BALoop()
             //linear_acceleration = -linear_acceleration;
             //angular_velocity = -angular_velocity ;
 
+//            double pre_t = iterIMU->header.stamp.toSec();
+//            iterIMU = imuQueue.erase(iterIMU);
+
+//            //std::cout << imuQueue.size() <<" "<< iterIMU->header.stamp << std::endl;
+
+//            double next_t = iterIMU->header.stamp.toSec();
+//            double dt = next_t - pre_t ;
+
             double pre_t = iterIMU->header.stamp.toSec();
             iterIMU = imuQueue.erase(iterIMU);
-
-            //std::cout << imuQueue.size() <<" "<< iterIMU->header.stamp << std::endl;
-
             double next_t = iterIMU->header.stamp.toSec();
-            float dt = next_t - pre_t ;
+            double dt = next_t - pre_t ;
 
 //            std::cout << linear_acceleration.transpose() << std::endl ;
 //            std::cout << angular_velocity.transpose() << std::endl ;
@@ -271,6 +295,9 @@ void LiveSLAMWrapper::BALoop()
         }
         if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].trust )
         {
+//            cout << "insert camera link" << endl ;
+//            cout << monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].T_k_2_c << endl ;
+
             monoOdometry->insertCameraLink(keyFrame, currentFrame,
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].R_k_2_c,
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].T_k_2_c,
@@ -328,7 +355,6 @@ void LiveSLAMWrapper::Loop()
             r.sleep() ;
             continue ;
         }
-        //puts("111") ;
         image0_queue_mtx.lock();
         image1_queue_mtx.lock();
         imu_queue_mtx.lock();
@@ -341,7 +367,6 @@ void LiveSLAMWrapper::Loop()
             r.sleep() ;
             continue ;
         }
-        //puts("222") ;
         pIter = pImage0Iter ;
         pIter++ ;
         if ( pIter == image0Buf.end() ){
@@ -351,7 +376,6 @@ void LiveSLAMWrapper::Loop()
             r.sleep() ;
             continue ;
         }
-        //puts("333") ;
         imageTimeStamp = pIter->t ;
         reverse_iterImu = imuQueue.rbegin() ;
 //        printf("%d %d\n", imuQueue.size() < 10, reverse_iterImu->header.stamp <= imageTimeStamp ) ;
@@ -378,12 +402,12 @@ void LiveSLAMWrapper::Loop()
         imu_queue_mtx.lock();
         Quaterniond q, dq ;
         q.setIdentity() ;
-        while ( currentIMU_iter != imuQueue.end() && currentIMU_iter->header.stamp < imageTimeStamp )
+        while ( currentIMU_iter->header.stamp < imageTimeStamp )
         {
-            float pre_t = currentIMU_iter->header.stamp.toSec();
+            double pre_t = currentIMU_iter->header.stamp.toSec();
             currentIMU_iter++ ;
-            float next_t = currentIMU_iter->header.stamp.toSec();
-            float dt = next_t - pre_t ;
+            double next_t = currentIMU_iter->header.stamp.toSec();
+            double dt = next_t - pre_t ;
 
             //prediction for dense tracking
             dq.x() = currentIMU_iter->angular_velocity.x*dt*0.5 ;
@@ -405,25 +429,25 @@ void LiveSLAMWrapper::Loop()
         assert(image0.elemSize() == 1);
         assert(image1.elemSize() == 1);
         assert(fx != 0 || fy != 0);
-        if(!isInitialized)
-        {
-            monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp,
-                                      Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
-            cv::Mat disparity, depth ;
-            monoOdometry->bm_(image1, image0, disparity, CV_32F);
-            calculateDepthImage(disparity, depth, 0.11, fx );
-            monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[0] ;
-            monoOdometry->currentKeyFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
+//        if(!isInitialized)
+//        {
+//            monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp,
+//                                      Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
+//            cv::Mat disparity, depth ;
+//            monoOdometry->bm_(image1, image0, disparity, CV_32F);
+//            calculateDepthImage(disparity, depth, 0.11, fx );
+//            monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[0] ;
+//            monoOdometry->currentKeyFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
 
-            monoOdometry->currentKeyFrame->keyFrameFlag = true ;
-            monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
-            monoOdometry->RefToFrame = Sophus::SE3() ;
-            isInitialized = true;
-        }
-        else if(isInitialized && monoOdometry != nullptr)
-        {
+//            monoOdometry->currentKeyFrame->keyFrameFlag = true ;
+//            monoOdometry->currentKeyFrame->cameraLinkList.clear() ;
+//            monoOdometry->RefToFrame = Sophus::SE3() ;
+//            isInitialized = true;
+//        }
+//        else if(isInitialized && monoOdometry != nullptr)
+//        {
             monoOdometry->trackFrame(image0, image1, imageSeqNumber, imageTimeStamp, deltaR );
-        }
+//        }
 	}
 }
 

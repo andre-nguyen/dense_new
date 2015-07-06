@@ -111,7 +111,7 @@ public:
                      Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel ) ;
     void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
             const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c, const MatrixXd& lastestATA );
-    void processIMU(float dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity);
+    void processIMU(double dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity);
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.
