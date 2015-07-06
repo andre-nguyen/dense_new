@@ -23,6 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <vector>
 #include <chrono>
 #include "image_transport/image_transport.h"
 #include "sensor_msgs/image_encodings.h"
@@ -60,6 +61,8 @@ public:
 
     /** Runs the main processing loop. Will never return. */
     void BALoop();
+
+    void pubCameraLink() ;
 	
 //	/** Resets everything, starting the odometry from the beginning again. */
 //	void resetAll();

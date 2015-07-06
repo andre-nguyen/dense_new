@@ -63,7 +63,7 @@ inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pu
 }
 
 inline void pubPath(const Vector3d& p,
-                    int kind,
+                    bool kind,
                     visualization_msgs::Marker& path_line,
                     ros::Publisher& pub_path )
 {
@@ -72,7 +72,7 @@ inline void pubPath(const Vector3d& p,
     pose_p.x = p(0);
     pose_p.y = p(1);
     pose_p.z = p(2);
-    if ( kind == 0 ){
+    if ( kind == false ){
         color_p.r = 1.0 ;
         color_p.g = 0.0 ;
         color_p.b = 0.0 ;

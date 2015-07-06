@@ -155,6 +155,55 @@ void LiveSLAMWrapper::popAndSetGravity()
     monoOdometry->margin.initPrior();
 }
 
+void LiveSLAMWrapper::pubCameraLink()
+{
+    cv::Mat linkListMap(500, 500, CV_8UC3 ) ;
+    linkListMap.setTo( cv::Vec3b(200,200,200));
+    cv::Vector<cv::Point2f> locations(slidingWindowSize) ;
+    double angle_K = 2.0*PI/slidingWindowSize ;
+    double r = 200.0 ;
+    for ( int i = 0 ; i < slidingWindowSize ; i++ )
+    {
+        locations[i].x = sin(angle_K*i)*r + 250.0 ;
+        locations[i].y = cos(angle_K*i)*r + 250.0 ;
+        if ( monoOdometry->slidingWindow[i] == nullptr ){
+            continue ;
+        }
+        if ( monoOdometry->slidingWindow[i]->keyFrameFlag ){
+            cv::circle(linkListMap, locations[i], 6, cv::Scalar(255, 0, 0), 5);
+        }
+        else{
+            cv::circle(linkListMap, locations[i], 6, cv::Scalar(0, 0, 255), 5);
+        }
+        if ( i == monoOdometry->head ){
+            cv::circle(linkListMap, locations[i], 6, cv::Scalar(0, 255, 0), 5);
+        }
+        cv::putText(linkListMap, boost::to_string(i), locations[i], cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255), 1);
+    }
+    int cnt = 0 ;
+    for( int i = 0 ; i < monoOdometry->numOfState ; i++ )
+    {
+        int idx = monoOdometry->head + i ;
+        if ( idx >= slidingWindowSize ){
+            idx -= slidingWindowSize ;
+        }
+        if ( monoOdometry->slidingWindow[i] == nullptr ){
+            continue ;
+        }
+        if ( monoOdometry->slidingWindow[idx]->keyFrameFlag == false){
+            continue;
+        }
+        list<int>::iterator iter =  monoOdometry->slidingWindow[idx]->cameraLinkList.begin();
+        for (; iter !=  monoOdometry->slidingWindow[idx]->cameraLinkList.end(); iter++ )
+        {
+            int linkID = *iter;
+            cv::line(linkListMap, locations[idx], locations[linkID], cv::Scalar(0, 255, 255), 3);
+            cnt++ ;
+        }
+    }
+    cv::imshow("linkListMap", linkListMap ) ;
+    cv::waitKey(1) ;
+}
 
 void LiveSLAMWrapper::BALoop()
 {
@@ -304,8 +353,8 @@ void LiveSLAMWrapper::BALoop()
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].lastestATA );
         }
 
-        cout << "[-BA]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
-        cout << "[-BA]current Velocity: " << currentFrame->v_bk.transpose() << endl;
+//        cout << "[-BA]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
+//        cout << "[-BA]current Velocity: " << currentFrame->v_bk.transpose() << endl;
 
         //BA
         t = (double)cvGetTickCount()  ;
@@ -316,6 +365,8 @@ void LiveSLAMWrapper::BALoop()
         cout << "[BA-]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
         cout << "[BA-]current Velocity: " << currentFrame->v_bk.transpose() << endl;
 
+        pubCameraLink();
+
         //marginalziation
         monoOdometry->twoWayMarginalize();
         monoOdometry->setNewMarginalzationFlag();
@@ -323,12 +374,13 @@ void LiveSLAMWrapper::BALoop()
         //    pubOdometry(-T_bk1_2_b0, R_bk1_2_b0, pub_odometry, pub_pose );
         //    pubPath(-T_bk1_2_b0, path_line, pub_path );
 
-        pubOdometry(-monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+        pubOdometry(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
                 monoOdometry->pub_odometry, monoOdometry->pub_pose );
-        pubPath(-monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+        pubPath(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag,
                 monoOdometry->path_line, monoOdometry->pub_path);
+
     }
 }
 

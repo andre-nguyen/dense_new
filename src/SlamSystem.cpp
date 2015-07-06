@@ -270,6 +270,7 @@ void SlamSystem::copyStateData( int preStateID )
 
   numOfState--;
   //swap the pointer
+  slidingWindow[preStateID].reset()  ;
   slidingWindow[preStateID] = slidingWindow[tail] ;
   tail = preStateID;
 
@@ -357,13 +358,13 @@ void SlamSystem::twoWayMarginalize()
           int linkID = *iter;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = R[linkID].transpose();
           H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
-          H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
+          H_i_2_j.block(0, 9, 3, 3) = -R[linkID].transpose();
+          H_i_2_j.block(0, 15, 3, 3) = vectorToSkewMatrix( R[linkID].transpose()*(T[currentStateID] - T[linkID]) );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
-          residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]* slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
+          residualCamera.segment(0, 3) = R[linkID].transpose()*(T[currentStateID] - T[linkID]) - slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
           residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
@@ -543,13 +544,13 @@ void SlamSystem::twoWayMarginalize()
           //H_i_2_j_T *= iter->P_inv ;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = R[linkID].transpose();
           H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
-          H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
+          H_i_2_j.block(0, 9, 3, 3) = -R[linkID].transpose();
+          H_i_2_j.block(0, 15, 3, 3) = vectorToSkewMatrix( R[linkID].transpose()*(T[currentStateID] - T[linkID]) );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
-          residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]*slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
+          residualCamera.segment(0, 3) = R[linkID].transpose()*(T[currentStateID] - T[linkID]) - slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
           residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
@@ -742,7 +743,6 @@ void SlamSystem::BA()
 
       //3. camera constraints
 //      int numList = 0;
-
       for (int i = 0; i < numOfState; i++)
       {
         int currentStateID = head + i;
@@ -771,13 +771,13 @@ void SlamSystem::BA()
           //H_i_2_j_T *= iter->P_inv ;
 
           H_i_2_j.setZero();
-          H_i_2_j.block(0, 0, 3, 3) = Matrix3d::Identity();
+          H_i_2_j.block(0, 0, 3, 3) = R[linkID].transpose();
           H_i_2_j.block(6, 6, 3, 3) = Matrix3d::Identity();
-          H_i_2_j.block(0, 9, 3, 3) = -Matrix3d::Identity();
-          H_i_2_j.block(0, 15, 3, 3) = R[linkID] * vectorToSkewMatrix( slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj );
+          H_i_2_j.block(0, 9, 3, 3) = -R[linkID].transpose();
+          H_i_2_j.block(0, 15, 3, 3) = vectorToSkewMatrix( R[linkID].transpose()*(T[currentStateID] - T[linkID]) );
           H_i_2_j.block(6, 15, 3, 3) = -R[currentStateID].transpose() *  R[linkID];
 
-          residualCamera.segment(0, 3) = T[currentStateID] - T[linkID] - R[linkID]*slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
+          residualCamera.segment(0, 3) = R[linkID].transpose()*(T[currentStateID] - T[linkID]) - slidingWindow[currentStateID]->cameraLink[linkID].T_bi_2_bj;
           residualCamera.segment(3, 3).setZero();
           residualCamera.segment(6, 3) = 2.0 * (Quaterniond(slidingWindow[currentStateID]->cameraLink[linkID].R_bi_2_bj.transpose()) * Quaterniond(R[linkID].transpose()*R[currentStateID])).vec();
 
@@ -1018,6 +1018,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 	tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL)*trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
 	// Keyframe selection
+    createNewKeyFrame = false ;
     if ( trackingReference->keyframe->numFramesTrackedOnThis > MIN_NUM_MAPPED )
 	{
         Sophus::Vector3d dist = RefToFrame.translation() * currentKeyFrame->meanIdepth;
@@ -1029,7 +1030,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 			createNewKeyFrame = true;
 
            // if(enablePrintDebugInfo && printKeyframeSelectionInfo)
-           //     printf("SELECT %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",trackingNewFrame->id(),trackingNewFrame->getTrackingParent()->id(), dist.dot(dist), tracker->pointUsage, lastTrackingClosenessScore );
+                printf("[insert KF] dist %.3f + usage %.3f = %.3f > 1\n", dist.dot(dist), tracker->pointUsage, lastTrackingClosenessScore );
         }
 		else
 		{
@@ -1046,9 +1047,13 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
     tmpFrameInfo.t = imageTimeStamp ;
     tmpFrameInfo.R_k_2_c = RefToFrame.rotationMatrix().cast<double>();
     tmpFrameInfo.T_k_2_c = RefToFrame.translation().cast<double>();
+
+//    ROS_WARN("trackFrame = ") ;
+//    std::cout << tmpFrameInfo.T_k_2_c.transpose() << std::endl;
+
     tmpFrameInfo.trust = true ;
     tmpFrameInfo.keyFrameFlag = createNewKeyFrame ;
-    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*1000000 ;
+    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*100000 ;
     frameInfoListTail = tmpTail ;
     frameInfoList_mtx.unlock();
 
