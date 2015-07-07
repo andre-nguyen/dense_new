@@ -133,6 +133,7 @@ void LiveSLAMWrapper::popAndSetGravity()
     std::cout << "gravity_b0 =\n" ;
     std::cout << gravity_b0.transpose() << "\n" ;
     monoOdometry->gravity_b0 = gravity_b0 ;
+    printf("gravity_b0.norm() = %lf\n", gravity_b0.norm() );
 
     imu_queue_mtx.unlock();
     cv::Mat image1 = pImage1Iter->image.clone();
@@ -349,7 +350,7 @@ void LiveSLAMWrapper::BALoop()
 
             monoOdometry->insertCameraLink(keyFrame, currentFrame,
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].R_k_2_c,
-                          monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].T_k_2_c,
+                          -monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].T_k_2_c,
                           monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].lastestATA );
         }
 

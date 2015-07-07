@@ -36,6 +36,7 @@
 #include "util/marginalization.h"
 #include "util/globalFuncs.h"
 #include "DataStructures/types.h"
+#include "util/math.h"
 
 namespace lsd_slam
 {
@@ -64,7 +65,12 @@ public:
     float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration, nAvgFindReferences;
     struct timeval lastHzUpdate;
     int head, tail ;
+    Math math;
     int numOfState ;
+
+    std::vector<Eigen::Vector3d>T ;
+    std::vector<Eigen::Vector3d>vel ;
+    std::vector<Eigen::Matrix3d>R ;
 
     ros::NodeHandle nh ;
     ros::Publisher pub_path ;
@@ -75,6 +81,7 @@ public:
     ros::Publisher pub_resudualMap ;
     ros::Publisher pub_gradientMapForDebug ;
     ros::Publisher pub_reprojectMap ;
+    ros::Publisher pub_denseTracking ;
     visualization_msgs::Marker path_line;
     cv::StereoBM bm_ ;
     cv::Mat gradientMapForDebug ;

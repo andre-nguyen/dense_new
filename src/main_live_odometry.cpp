@@ -73,6 +73,8 @@ bool initCalibrationPar(string caliFilePath)
         puts("calibration file format error 2") ;
         return false ;
     }
+    printf("fx=%f fy=%f cx=%f cy=%f\n", calib_par.fx, calib_par.fy, calib_par.cx, calib_par.cy ) ;
+    printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
 
     return true ;
 }

@@ -56,12 +56,12 @@ namespace lsd_slam
 #define slidingWindowSize 30
 #define	INDEX(i, j, n, m)		( (i)*(m) + (j)  )
 #define	STATE_SZ(i)		(  (i)*variablesNumInState )
-#define maxIterationBA 5
+#define maxIterationBA 4
 const double PI = acos(-1.0);
 const double huber_r_v = 0.05 ;
 const double huber_r_w = 1.0/180.0*PI ;
-const Eigen::Matrix3d acc_cov = 1e-2 * Eigen::Matrix3d::Identity();
-const Eigen::Matrix3d gra_cov = 1e-2 * Eigen::Matrix3d::Identity();
+const Eigen::Matrix3d acc_cov = 1e-4 * Eigen::Matrix3d::Identity();
+const Eigen::Matrix3d gra_cov = 1e-4 * Eigen::Matrix3d::Identity();
 const Eigen::Matrix3d gyr_cov = 1e-4 * Eigen::Matrix3d::Identity();
 const int frameInfoListSize = 200 ;
 
@@ -186,7 +186,7 @@ const int frameInfoListSize = 200 ;
 
 #define INITIALIZATION_PHASE_COUNT 5
 
-#define MIN_NUM_MAPPED 0
+#define MIN_NUM_MAPPED -1
 
 // settings variables
 // controlled via keystrokes
