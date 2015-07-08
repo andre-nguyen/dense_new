@@ -56,6 +56,10 @@ SlamSystem::SlamSystem(int w, int h, Eigen::Matrix3f K, ros::NodeHandle &n)
 
 	tracker = new SE3Tracker(w,h,K);
     trackingReference = new TrackingReference();
+
+    trackerConstraint = new SE3Tracker(w,h,K);
+    trackingReferenceConstraint = new TrackingReference();
+
     int maxDisparity = 64 ;
     int blockSize = 21 ;
     bm_ = cv::StereoBM( cv::StereoBM::BASIC_PRESET, maxDisparity, blockSize) ;
@@ -78,6 +82,9 @@ SlamSystem::~SlamSystem()
 {
 	delete trackingReference;
 	delete tracker;
+
+    delete trackingReferenceConstraint ;
+    delete trackerConstraint ;
 
     for( int i = 0 ; i < slidingWindowSize ; i++ ){
         slidingWindow[i].reset();
@@ -600,10 +607,6 @@ void SlamSystem::BA()
       HTb.segment(0, STATE_SZ(m_sz)) -= margin.Ap.block(0, 0, STATE_SZ(m_sz), STATE_SZ(m_sz))*dx;
       HTb.segment(0, STATE_SZ(m_sz)) -= margin.bp.segment(0, STATE_SZ(m_sz));
 
-//      for ( int i = 0 ; i < 9 ; i++ ){
-//          HTH(i, i) += SQ(1000000.0) ;
-//      }
-
       //2. imu constraints
       for (int i = numOfState-2; i >= 0; i-- )
       {
@@ -808,6 +811,85 @@ void SlamSystem::insertCameraLink(Frame* keyFrame, Frame* currentFrame,
   //keyFrame->cameraLink[currentFrame->id].T_trust = T_trust ;
 }
 
+void SlamSystem::setReprojectionListRelateToLastestKeyFrame(int begin, int end, Frame* current )
+{
+    int num = end - begin;
+    if ( num < 0 ){
+        num += slidingWindowSize ;
+    }
+    int trackFrameCnt = 0 ;
+    for (int i = 0; i < num; i++)
+    {
+        int ref_id = begin + i;
+        if (ref_id >=  slidingWindowSize) {
+            ref_id -= slidingWindowSize;
+        }
+        if ( slidingWindow[ref_id]->keyFrameFlag == false
+             //|| trackFrameCnt > 20
+             ){
+            continue;
+        }
+        Matrix3d R_i_2_j ;
+        Vector3d T_i_2_j ;
+        SE3 c2f_init ;
+
+        //check from current to ref
+        R_i_2_j = slidingWindow[ref_id]->R_bk_2_b0.transpose() * current->R_bk_2_b0 ;
+        T_i_2_j = -slidingWindow[ref_id]->R_bk_2_b0.transpose() * ( slidingWindow[ref_id]->T_bk_2_b0 - current->T_bk_2_b0 ) ;
+        c2f_init.setRotationMatrix(R_i_2_j);
+        c2f_init.translation() = T_i_2_j ;
+
+        //current->makePointCloud(QUICK_KF_CHECK_LVL);
+
+        trackerConstraint->trackFrameOnPermaref(current, slidingWindow[ref_id].get(), c2f_init ) ;
+        if ( trackerConstraint->trackingWasGood == false ){
+            //ROS_WARN("first check fail") ;
+            continue ;
+        }
+        //ROS_WARN("pass first check") ;
+
+        //check from ref to current
+        R_i_2_j = current->R_bk_2_b0.transpose() * slidingWindow[ref_id]->R_bk_2_b0 ;
+        T_i_2_j = -current->R_bk_2_b0.transpose() * ( current->T_bk_2_b0 - slidingWindow[ref_id]->T_bk_2_b0 ) ;
+        c2f_init.setRotationMatrix(R_i_2_j);
+        c2f_init.translation() = T_i_2_j ;
+        trackerConstraint->trackFrameOnPermaref(slidingWindow[ref_id].get(), current, c2f_init ) ;
+        if ( trackerConstraint->trackingWasGood == false ){
+            //ROS_WARN("second check fail") ;
+            continue ;
+        }
+        //ROS_WARN("pass second check") ;
+
+        //Pass the cross check
+        if (  trackingReferenceConstraint->keyframe != slidingWindow[ref_id].get() ){
+             trackingReferenceConstraint->importFrame( slidingWindow[ref_id].get() );
+        }
+
+        SE3 RefToFrame = trackerConstraint->trackFrame( trackingReferenceConstraint, current,
+                                   c2f_init );
+        trackFrameCnt++ ;
+        //float tracking_lastResidual = trackerConstraint->lastResidual;
+        //float tracking_lastUsage = trackerConstraint->pointUsage;
+        //float tracking_lastGoodPerBad = trackerConstraint->lastGoodCount / (trackerConstraint->lastGoodCount + trackerConstraint->lastBadCount);
+        float tracking_lastGoodPerTotal = trackerConstraint->lastGoodCount / (current->width(SE3TRACKING_MIN_LEVEL)*current->height(SE3TRACKING_MIN_LEVEL));
+        Sophus::Vector3d dist = RefToFrame.translation() * slidingWindow[ref_id]->meanIdepth;
+        float minVal = 1.0f;
+        float lastTrackingClosenessScore = getRefFrameScore(dist.dot(dist), trackerConstraint->pointUsage, KFDistWeight, KFUsageWeight);
+        if ( trackerConstraint->trackingWasGood == false
+             ||  tracking_lastGoodPerTotal < MIN_GOODPERALL_PIXEL
+             || lastTrackingClosenessScore > minVal
+             )
+        {
+            continue ;
+        }
+        //ROS_WARN("[add link, from %d to %d]", slidingWindow[ref_id]->id(), current->id() ) ;
+        insertCameraLink( slidingWindow[ref_id].get(), current,
+                          RefToFrame.rotationMatrix().cast<double>(),
+                          -RefToFrame.translation().cast<double>(),
+                          MatrixXd::Identity(6, 6)*1000000 ) ;
+        break ;
+    }
+}
 
 void SlamSystem::processIMU(double dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity)
 {
@@ -844,6 +926,14 @@ void SlamSystem::processIMU(double dt, const Vector3d&linear_acceleration, const
      current->timeIntegral += dt;
 }
 
+void SlamSystem::updateTrackingReference()
+{
+    if (  trackingReference->keyframe != currentKeyFrame.get() ){
+        trackingReference->importFrame( currentKeyFrame.get() );
+        currentKeyFrame->setPermaRef( trackingReference );
+    }
+}
+
 void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
                             ros::Time imageTimeStamp, Eigen::Matrix3d deltaR)
 {
@@ -852,9 +942,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
                 new Frame( frameID, width, height, K, imageTimeStamp.toSec(), img1.data,
                            Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() )
                 );
-    if (  trackingReference->keyframe != currentKeyFrame.get() ){
-         trackingReference->importFrame( currentKeyFrame.get() );
-    }
+    //updateTrackingReference() ;
 
     //initial guess
     SE3 RefToFrame_initialEstimate ;
@@ -896,7 +984,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 
 	// Keyframe selection
     createNewKeyFrame = false ;
-    printf("tracking_lastGoodPerTotal = %f\n", tracking_lastGoodPerTotal ) ;
+    //printf("tracking_lastGoodPerTotal = %f\n", tracking_lastGoodPerTotal ) ;
     if ( trackingReference->keyframe->numFramesTrackedOnThis > MIN_NUM_MAPPED )
 	{
         Sophus::Vector3d dist = RefToFrame.translation() * currentKeyFrame->meanIdepth;
@@ -910,7 +998,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 			createNewKeyFrame = true;
 
            // if(enablePrintDebugInfo && printKeyframeSelectionInfo)
-                printf("[insert KF] dist %.3f + usage %.3f = %.3f > 1\n", dist.dot(dist), tracker->pointUsage, lastTrackingClosenessScore );
+           //     printf("[insert KF] dist %.3f + usage %.3f = %.3f > 1\n", dist.dot(dist), tracker->pointUsage, lastTrackingClosenessScore );
         }
 		else
 		{

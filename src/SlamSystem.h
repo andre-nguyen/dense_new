@@ -107,6 +107,7 @@ public:
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
     void trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID, ros::Time imageTimeStamp, Matrix3d deltaR);
+    void updateTrackingReference() ;
 
     /** Returns the current pose estimate. */
     void debugDisplayDepthMap();
@@ -119,6 +120,7 @@ public:
     void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
             const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c, const MatrixXd& lastestATA );
     void processIMU(double dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity);
+    void setReprojectionListRelateToLastestKeyFrame(int begin, int end, Frame* current );
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.
@@ -127,6 +129,10 @@ public:
     std::shared_ptr<Frame> currentKeyFrame;	// changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
     //std::shared_ptr<Frame> lastTrackedFrame;
     bool createNewKeyFrame;
+
+    // ============= LOOP CLOSURE THREAD (+ init) ===============
+    TrackingReference* trackingReferenceConstraint; // tracking reference for current keyframe. only used by tracking.
+    SE3Tracker* trackerConstraint;
 
 	// ============= SHARED ENTITIES =============
 	float tracking_lastResidual;

@@ -154,6 +154,7 @@ void LiveSLAMWrapper::popAndSetGravity()
     monoOdometry->RefToFrame = Sophus::SE3() ;
 
     monoOdometry->margin.initPrior();
+    monoOdometry->updateTrackingReference();
 }
 
 void LiveSLAMWrapper::pubCameraLink()
@@ -331,6 +332,7 @@ void LiveSLAMWrapper::BALoop()
                                    width, width*3, gradientMapForDebug.data );
             monoOdometry->pub_gradientMapForDebug.publish(msg) ;
 
+            int preKeyFrameID = monoOdometry->currentKeyFrame->id() ;
             //set key frame
             monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[monoOdometry->tail] ;
             monoOdometry->currentKeyFrame->keyFrameFlag = true ;
@@ -338,10 +340,21 @@ void LiveSLAMWrapper::BALoop()
             //reset the initial guess
             monoOdometry->RefToFrame = Sophus::SE3() ;
 
+            //update tracking reference
+            monoOdometry->updateTrackingReference();
+
+
             //unlock dense tracking
             monoOdometry->tracking_mtx.lock();
             monoOdometry->lock_densetracking = false;
             monoOdometry->tracking_mtx.unlock();
+
+            //add possible loop closure link
+            t = (double)cvGetTickCount()  ;
+            monoOdometry->setReprojectionListRelateToLastestKeyFrame( monoOdometry->head, preKeyFrameID,
+                                                                      monoOdometry->slidingWindow[monoOdometry->tail].get() ) ;
+            ROS_WARN("loop closure link cost time: %f", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
+            t = (double)cvGetTickCount()  ;
         }
         if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].trust )
         {
@@ -363,8 +376,8 @@ void LiveSLAMWrapper::BALoop()
         printf("BA cost time: %f\n", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
         t = (double)cvGetTickCount()  ;
 
-        cout << "[BA-]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
-        cout << "[BA-]current Velocity: " << currentFrame->v_bk.transpose() << endl;
+        //cout << "[BA-]current Position: " << currentFrame->T_bk_2_b0.transpose() << endl;
+        //cout << "[BA-]current Velocity: " << currentFrame->v_bk.transpose() << endl;
 
         pubCameraLink();
 

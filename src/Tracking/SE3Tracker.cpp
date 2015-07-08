@@ -163,10 +163,11 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 	Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
 
-	boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
-	boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+//	boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+//	boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
 
-	affineEstimation_a = 1; affineEstimation_b = 0;
+    affineEstimation_a = 1;
+    affineEstimation_b = 0;
 
 	LGS6 ls;
 	diverged = false;
@@ -175,6 +176,10 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 	callOptimized(calcResidualAndBuffers, (reference->permaRef_posData, reference->permaRef_colorAndVarData, 0, reference->permaRefNumPts, frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
 	if(buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL))
 	{
+//        printf("reference->permaRefNumPts=%d\n", reference->permaRefNumPts) ;
+//        printf("buf_warped_size=%d\n",buf_warped_size ) ;
+//        std::cout << referenceToFrameOrg.rotationMatrix() << std::endl ;
+//        std::cout << referenceToFrameOrg.translation() << std::endl ;
 		diverged = true;
 		trackingWasGood = false;
 		return SE3();
@@ -210,6 +215,9 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 			callOptimized(calcResidualAndBuffers, (reference->permaRef_posData, reference->permaRef_colorAndVarData, 0, reference->permaRefNumPts, frame, new_referenceToFrame, QUICK_KF_CHECK_LVL, false));
 			if(buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (width>>QUICK_KF_CHECK_LVL)*(height>>QUICK_KF_CHECK_LVL))
 			{
+//                printf("buf_warped_size=%d\n",buf_warped_size ) ;
+//                std::cout << referenceToFrameOrg.rotationMatrix() << std::endl ;
+//                std::cout << referenceToFrameOrg.translation() << std::endl ;
 				diverged = true;
 				trackingWasGood = false;
 				return SE3();
@@ -985,26 +993,26 @@ float SE3Tracker::calcResidualAndBuffers(
 		usageCount += depthChange < 1 ? depthChange : 1;
 
 
-		// DEBUG STUFF
-		if(plotTrackingIterationInfo || plotResidual)
-		{
-			// for debug plot only: find x,y again.
-			// horribly inefficient, but who cares at this point...
-			Eigen::Vector3f point = KLvl * (*refPoint);
-			int x = point[0] / point[2] + 0.5f;
-			int y = point[1] / point[2] + 0.5f;
+//		// DEBUG STUFF
+//		if(plotTrackingIterationInfo || plotResidual)
+//		{
+//			// for debug plot only: find x,y again.
+//			// horribly inefficient, but who cares at this point...
+//			Eigen::Vector3f point = KLvl * (*refPoint);
+//			int x = point[0] / point[2] + 0.5f;
+//			int y = point[1] / point[2] + 0.5f;
 
-			if(plotTrackingIterationInfo)
-			{
-				setPixelInCvMat(&debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
-				setPixelInCvMat(&debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
-			}
-			if(isGood)
-				setPixelInCvMat(&debugImageResiduals,getGrayCvPixel(residual+128),x,y,(width/w));
-			else
-				setPixelInCvMat(&debugImageResiduals,cv::Vec3b(0,0,255),x,y,(width/w));
+//			if(plotTrackingIterationInfo)
+//			{
+//				setPixelInCvMat(&debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
+//				setPixelInCvMat(&debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
+//			}
+//			if(isGood)
+//				setPixelInCvMat(&debugImageResiduals,getGrayCvPixel(residual+128),x,y,(width/w));
+//			else
+//				setPixelInCvMat(&debugImageResiduals,cv::Vec3b(0,0,255),x,y,(width/w));
 
-		}
+//		}
 	}
 
 	buf_warped_size = idx;
