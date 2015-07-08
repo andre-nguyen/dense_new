@@ -829,18 +829,30 @@ void SlamSystem::setReprojectionListRelateToLastestKeyFrame(int begin, int end, 
              ){
             continue;
         }
+
+        double closenessTH = 1.0 ;
+        double distanceTH = closenessTH * 15 / (KFDistWeight*KFDistWeight);
+        double cosAngleTH = 1.0 - 0.25 * closenessTH ;
+
+        //euclideanOverlapCheck
+        double distFac = slidingWindow[ref_id]->meanIdepth ;
+        Eigen::Vector3d dd = ( slidingWindow[ref_id]->T_bk_2_b0 - current->T_bk_2_b0) * distFac;
+        if( dd.dot(dd) > distanceTH) continue;
+
+//        Eigen::Quaterniond qq( slidingWindow[ref_id]->R_bk_2_b0.transpose() * current->R_bk_2_b0) ;
+//        Eigen::Vector3d aa = qq.vec()*2.0 ;
+//        double dirDotProd = aa.dot( aa ) ;
+//        if(dirDotProd < cosAngleTH) continue;
+
+
         Matrix3d R_i_2_j ;
         Vector3d T_i_2_j ;
         SE3 c2f_init ;
-
         //check from current to ref
         R_i_2_j = slidingWindow[ref_id]->R_bk_2_b0.transpose() * current->R_bk_2_b0 ;
         T_i_2_j = -slidingWindow[ref_id]->R_bk_2_b0.transpose() * ( slidingWindow[ref_id]->T_bk_2_b0 - current->T_bk_2_b0 ) ;
         c2f_init.setRotationMatrix(R_i_2_j);
         c2f_init.translation() = T_i_2_j ;
-
-        //current->makePointCloud(QUICK_KF_CHECK_LVL);
-
         trackerConstraint->trackFrameOnPermaref(current, slidingWindow[ref_id].get(), c2f_init ) ;
         if ( trackerConstraint->trackingWasGood == false ){
             //ROS_WARN("first check fail") ;
