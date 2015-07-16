@@ -832,7 +832,7 @@ void SlamSystem::setReprojectionListRelateToLastestKeyFrame(int begin, int end, 
 
         double closenessTH = 1.0 ;
         double distanceTH = closenessTH * 15 / (KFDistWeight*KFDistWeight);
-        double cosAngleTH = 1.0 - 0.25 * closenessTH ;
+        //double cosAngleTH = 1.0 - 0.25 * closenessTH ;
 
         //euclideanOverlapCheck
         double distFac = slidingWindow[ref_id]->meanIdepth ;
@@ -898,7 +898,7 @@ void SlamSystem::setReprojectionListRelateToLastestKeyFrame(int begin, int end, 
         insertCameraLink( slidingWindow[ref_id].get(), current,
                           RefToFrame.rotationMatrix().cast<double>(),
                           -RefToFrame.translation().cast<double>(),
-                          MatrixXd::Identity(6, 6)*1000000 ) ;
+                          MatrixXd::Identity(6, 6)*DENSE_TRACKING_WEIGHT ) ;
         break ;
     }
 }
@@ -1033,7 +1033,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 
     tmpFrameInfo.trust = true ;
     tmpFrameInfo.keyFrameFlag = createNewKeyFrame ;
-    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*1000000 ;
+    tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*DENSE_TRACKING_WEIGHT ;
     frameInfoListTail = tmpTail ;
     frameInfoList_mtx.unlock();
 

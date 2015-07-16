@@ -64,6 +64,8 @@ const Eigen::Matrix3d acc_cov = 1e-4 * Eigen::Matrix3d::Identity();
 const Eigen::Matrix3d gra_cov = 1e-4 * Eigen::Matrix3d::Identity();
 const Eigen::Matrix3d gyr_cov = 1e-4 * Eigen::Matrix3d::Identity();
 const int frameInfoListSize = 200 ;
+#define DENSE_TRACKING_WEIGHT 100000000.0
+#define RECORD_RESULT
 
 /** ============== constants for validity handeling ======================= */
 

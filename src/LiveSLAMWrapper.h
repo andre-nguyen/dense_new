@@ -91,7 +91,7 @@ public:
 	SlamSystem* monoOdometry;
 
 	std::string outFileName;
-	std::ofstream* outFile;
+    std::ofstream outFile;
 	
 	float fx, fy, cx, cy;
 	int width, height;

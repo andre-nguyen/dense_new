@@ -48,7 +48,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, 
     K_sophus << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
 
 	outFileName = packagePath+"estimated_poses.txt";
-    outFile = nullptr;
+    outFile.open(outFileName);
 
 	// make Odometry
     monoOdometry = new SlamSystem(width, height, K_sophus, _nh);
@@ -64,11 +64,10 @@ LiveSLAMWrapper::~LiveSLAMWrapper()
 {
 	if(monoOdometry != 0)
 		delete monoOdometry;
-	if(outFile != 0)
+    if( outFile.is_open() )
 	{
-		outFile->flush();
-		outFile->close();
-		delete outFile;
+        outFile.flush();
+        outFile.close();
 	}
     image0Buf.clear();
     image1Buf.clear();
@@ -395,6 +394,14 @@ void LiveSLAMWrapper::BALoop()
                 monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag,
                 monoOdometry->path_line, monoOdometry->pub_path);
 
+#ifdef RECORD_RESULT
+        double a[3] ;
+        RtoEulerAngles(monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0, a ) ;
+        outFile << a[0] << " " << a[1] << " " << a[2] << " "
+                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(0) << " "
+                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(1) << " "
+                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(2) << "\n";
+#endif
     }
 }
 
@@ -533,10 +540,10 @@ void LiveSLAMWrapper::logCameraPose(const SE3& camToWorld, double time)
 			quat.z(),
 			quat.w());
 
-	if(outFile == 0)
-		outFile = new std::ofstream(outFileName.c_str());
-	outFile->write(buffer,num);
-	outFile->flush();
+//	if(outFile == 0)
+//		outFile = new std::ofstream(outFileName.c_str());
+//	outFile->write(buffer,num);
+//	outFile->flush();
 }
 
 }

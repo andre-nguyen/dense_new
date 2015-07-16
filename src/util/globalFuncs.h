@@ -174,3 +174,11 @@ inline Eigen::Matrix3d vectorToSkewMatrix(const Eigen::Vector3d& w)
 
   return skewW;
 }
+
+inline void RtoEulerAngles(Eigen::Matrix3d R, double a[3])
+{
+    double theta = acos(0.5*(R(0, 0) + R(1, 1) + R(2, 2) - 1.0));
+    a[0] = (R(2, 1) - R(1, 2)) / (2.0* sin(theta));
+    a[1] = (R(0, 2) - R(2, 0)) / (2.0* sin(theta));
+    a[2] = (R(1, 0) - R(0, 1)) / (2.0* sin(theta));
+}
