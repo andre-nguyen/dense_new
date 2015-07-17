@@ -129,6 +129,7 @@ void LiveSLAMWrapper::popAndSetGravity()
         //gravity_b0 = -gravity_b0 ;
         break ;
     }
+    initialTime = tImage ;
     std::cout << "gravity_b0 =\n" ;
     std::cout << gravity_b0.transpose() << "\n" ;
     monoOdometry->gravity_b0 = gravity_b0 ;
@@ -395,12 +396,14 @@ void LiveSLAMWrapper::BALoop()
                 monoOdometry->path_line, monoOdometry->pub_path);
 
 #ifdef RECORD_RESULT
+        double output_time ;
         double a[3] ;
         RtoEulerAngles(monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0, a ) ;
-        outFile << a[0] << " " << a[1] << " " << a[2] << " "
-                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(0) << " "
-                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(1) << " "
-                        << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(2) << "\n";
+        outFile << (imageTimeStamp - initialTime).toSec() << " "
+                << a[0] << " " << a[1] << " " << a[2] << " "
+                << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(0) << " "
+                << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(1) << " "
+                << monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0(2) << "\n";
 #endif
     }
 }

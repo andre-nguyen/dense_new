@@ -986,7 +986,6 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 	tracking_lastGoodPerBad = tracker->lastGoodCount / (tracker->lastGoodCount + tracker->lastBadCount);
 	tracking_lastGoodPerTotal = tracker->lastGoodCount / (trackingNewFrame->width(SE3TRACKING_MIN_LEVEL)*trackingNewFrame->height(SE3TRACKING_MIN_LEVEL));
 
-
 //    geometry_msgs::Vector3 v_pub ;
 //    Vector3d translation = RefToFrame.translation() ;
 //    v_pub.x = translation(0) ;
@@ -1018,6 +1017,9 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
         //       printf("SKIPPD %d on %d! dist %.3f + usage %.3f = %.3f < 1\n",trackingNewFrame->id(),trackingNewFrame->getTrackingParent()->id(), dist.dot(dist), tracker->pointUsage, lastTrackingClosenessScore );
 		}
 	}
+    if ( tracker->diverged ){
+        createNewKeyFrame = true ;
+    }
     frameInfoList_mtx.lock();
     int tmpTail = frameInfoListTail+1 ;
     if ( tmpTail >= frameInfoListSize ){
@@ -1031,7 +1033,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 //    ROS_WARN("trackFrame = ") ;
 //    std::cout << tmpFrameInfo.T_k_2_c.transpose() << std::endl;
 
-    tmpFrameInfo.trust = true ;
+    tmpFrameInfo.trust = tracker->trackingWasGood ;
     tmpFrameInfo.keyFrameFlag = createNewKeyFrame ;
     tmpFrameInfo.lastestATA = MatrixXd::Identity(6, 6)*DENSE_TRACKING_WEIGHT ;
     frameInfoListTail = tmpTail ;

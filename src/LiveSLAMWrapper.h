@@ -98,6 +98,8 @@ public:
 
 	int imageSeqNumber;
     ros::NodeHandle nh ;
+
+    ros::Time initialTime ;
 };
 
 }
