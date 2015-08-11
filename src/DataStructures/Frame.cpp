@@ -151,7 +151,7 @@ void Frame::calculateMeanInformation()
 	meanInformation = sum / goodpx;
 }
 
-void Frame::setDepthFromGroundTruth(const float* depth)
+int Frame::setDepthFromGroundTruth(const float* depth)
 {
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 	const float* pyrMaxGradient = maxGradients(0);
@@ -209,6 +209,8 @@ void Frame::setDepthFromGroundTruth(const float* depth)
 	// Invalidate higher levels, they need to be updated with the new data
 	release(IDEPTH | IDEPTH_VAR, true, true);
 	data.hasIDepthBeenSet = true;
+
+    return numSum ;
 }
 
 void Frame::require(int dataFlags, int level)

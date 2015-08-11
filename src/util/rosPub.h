@@ -39,7 +39,7 @@
 
 using namespace Eigen;
 
-inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pub_odometry, ros::Publisher& pub_pose )
+inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pub_odometry, ros::Publisher& pub_pose, int control_flag )
 {
     nav_msgs::Odometry odometry;
     Eigen::Quaterniond q(R) ;
@@ -53,6 +53,15 @@ inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pu
     odometry.pose.pose.orientation.y = q.y();
     odometry.pose.pose.orientation.z = q.z();
     odometry.pose.pose.orientation.w = q.w();
+    if ( control_flag == 0 ){
+      odometry.child_frame_id = "V" ;
+    }
+    else if ( control_flag == 1 ){
+      odometry.child_frame_id = "L" ;
+    }
+    else {
+      odometry.child_frame_id = "X" ;
+    }
     pub_odometry.publish(odometry);
 
     geometry_msgs::PoseStamped pose_stamped;
@@ -63,7 +72,7 @@ inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pu
 }
 
 inline void pubPath(const Vector3d& p,
-                    bool kind,
+                    int kind,
                     visualization_msgs::Marker& path_line,
                     ros::Publisher& pub_path )
 {
@@ -72,18 +81,24 @@ inline void pubPath(const Vector3d& p,
     pose_p.x = p(0);
     pose_p.y = p(1);
     pose_p.z = p(2);
-    if ( kind == false ){
+    if ( kind == 0 ){
         color_p.r = 1.0 ;
         color_p.g = 0.0 ;
         color_p.b = 0.0 ;
         color_p.a = 1.0 ;
     }
-    else
+    else if ( kind == 1 )
     {
         color_p.r = 0.0 ;
         color_p.g = 1.0 ;
         color_p.b = 0.0 ;
         color_p.a = 1.0 ;
+    }
+    else{
+      color_p.r = 1.0 ;
+      color_p.g = 1.0 ;
+      color_p.b = 0.0 ;
+      color_p.a = 1.0 ;
     }
     path_line.colors.push_back(color_p);
     path_line.points.push_back(pose_p);

@@ -33,6 +33,7 @@
 #include "DataStructures/types.h"
 #include "util/rosPub.h"
 #include "visensor_node/visensor_imu.h"
+#include <tf/transform_broadcaster.h>
 
 namespace cv {
 	class Mat;
@@ -63,7 +64,9 @@ public:
     void BALoop();
 
     void pubCameraLink() ;
-	
+
+    void pubPointCloud(int num, ros::Time imageTimeStamp ) ;
+
 //	/** Resets everything, starting the odometry from the beginning again. */
 //	void resetAll();
 
@@ -94,12 +97,16 @@ public:
     std::ofstream outFile;
 	
 	float fx, fy, cx, cy;
+    double sumDist ;
 	int width, height;
 
 	int imageSeqNumber;
     ros::NodeHandle nh ;
 
     ros::Time initialTime ;
+
+    int cnt_info_smooth ;
+    geometry_msgs::Vector3 to_pub_info ;
 };
 
 }

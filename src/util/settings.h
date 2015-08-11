@@ -28,6 +28,8 @@
 #define ENABLE_SSE
 #endif
 
+//#define PRINT_DEBUG_INFO
+#define PUB_POINT_CLOUD
 
 namespace lsd_slam
 {

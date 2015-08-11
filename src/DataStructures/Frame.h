@@ -54,7 +54,7 @@ public:
 	void calculateMeanInformation();
 	
 	/** Sets ground truth depth (real, not inverse!) from a float array on level zero. Invalidates higher levels. */
-    void setDepthFromGroundTruth(const float *depth);	
+    int setDepthFromGroundTruth(const float *depth);
 
 	// Accessors
 	/** Returns the unique frame id. */

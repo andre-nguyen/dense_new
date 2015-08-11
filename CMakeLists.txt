@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   camera_info_manager 
   dynamic_reconfigure
   cmake_modules
+  tf
 )
 
 add_definitions("-DUSE_ROS")

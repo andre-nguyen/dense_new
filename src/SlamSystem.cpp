@@ -28,6 +28,7 @@
 #include "IOWrapper/ImageDisplay.h"
 #include "DataStructures/FrameMemory.h"
 #include <deque>
+#include "sensor_msgs/PointCloud2.h"
 
 // for mkdir
 #include <sys/types.h>
@@ -123,13 +124,15 @@ void SlamSystem::debugDisplayDepthMap()
 void SlamSystem::initRosPub()
 {
     pub_path = nh.advertise<visualization_msgs::Marker>("/denseVO/path", 1000);
-    pub_cloud = nh.advertise<sensor_msgs::PointCloud>("/denseVO/cloud", 1000);
+    pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("/denseVO/cloud", 1000);
     pub_odometry = nh.advertise<nav_msgs::Odometry>("/denseVO/odometry", 1000);
     pub_pose = nh.advertise<geometry_msgs::PoseStamped>("/denseVO/pose", 1000);
     pub_resudualMap = nh.advertise<sensor_msgs::Image>("denseVO/residualMap", 100 );
     pub_reprojectMap = nh.advertise<sensor_msgs::Image>("denseVO/reprojectMap", 100 );
     pub_gradientMapForDebug = nh.advertise<sensor_msgs::Image>("denseVO/debugMap", 100 );
     pub_denseTracking = nh.advertise<geometry_msgs::Vector3>("denseVO/dt", 100);
+    pub_angular_velocity = nh.advertise<geometry_msgs::Vector3>("denseVO/angular_velocity", 100);;
+    pub_linear_velocity = nh.advertise<geometry_msgs::Vector3>("denseVO/linear_velocity", 100);;
 
     path_line.header.frame_id    = "world";
     path_line.header.stamp       = ros::Time::now();

@@ -82,6 +82,8 @@ public:
     ros::Publisher pub_gradientMapForDebug ;
     ros::Publisher pub_reprojectMap ;
     ros::Publisher pub_denseTracking ;
+    ros::Publisher pub_angular_velocity ;
+    ros::Publisher pub_linear_velocity ;
     visualization_msgs::Marker path_line;
     cv::StereoBM bm_ ;
     cv::Mat gradientMapForDebug ;
