@@ -30,6 +30,7 @@
 #include "sensor_msgs/PointCloud2.h"
 
 
+
 namespace lsd_slam
 {
 
@@ -47,6 +48,8 @@ LiveSLAMWrapper::LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, 
     isInitialized = false;
     Sophus::Matrix3f K_sophus;
     K_sophus << fx, 0.0, cx, 0.0, fy, cy, 0.0, 0.0, 1.0;
+
+    R_vi_2_odometry << 0, 0, 1, -1, 0, 0, 0, -1, 0 ;
 
     //outFileName = packagePath+"estimated_poses.txt";
     outFileName = packagePath+"angular_volcity.txt";
@@ -214,7 +217,7 @@ void LiveSLAMWrapper::pubCameraLink()
     cv::waitKey(1) ;
 }
 
-void LiveSLAMWrapper::pubPointCloud(int num, ros::Time imageTimeStamp )
+void LiveSLAMWrapper::pubPointCloud(int num, ros::Time imageTimeStamp, Eigen::Matrix3d R_vi_2_odometry )
 {
     sensor_msgs::PointCloud2 pc2 ;
     pc2.header.frame_id = "/map";//world
@@ -252,6 +255,12 @@ void LiveSLAMWrapper::pubPointCloud(int num, ros::Time imageTimeStamp )
     const float* pyrIdepthSource = monoOdometry->currentKeyFrame->idepth(level);
     const float* pyrIdepthVarSource = monoOdometry->currentKeyFrame->idepthVar(level);
     Eigen::Vector3f posDataPT ;
+    Eigen::Vector3f posDataOutput ;
+    Eigen::Matrix3f R_output ;
+    R_output << R_vi_2_odometry(0, 0), R_vi_2_odometry(0, 1), R_vi_2_odometry(0, 2),
+            R_vi_2_odometry(1, 0), R_vi_2_odometry(1, 1), R_vi_2_odometry(1, 2),
+            R_vi_2_odometry(2, 0), R_vi_2_odometry(2, 1), R_vi_2_odometry(2, 2) ;
+
     int k = 0 ;
     for(int x=1; x<w-1; x++)
     {
@@ -262,9 +271,10 @@ void LiveSLAMWrapper::pubPointCloud(int num, ros::Time imageTimeStamp )
             if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0) continue;
 
             posDataPT = (1.0f / pyrIdepthSource[idx]) * Eigen::Vector3f(fxInvLevel*x+cxInvLevel,fyInvLevel*y+cyInvLevel,1);
-            pt32[k++] = posDataPT(0) ;
-            pt32[k++] = posDataPT(1) ;
-            pt32[k++] = posDataPT(2) ;
+            posDataOutput = R_output*posDataPT ;
+            pt32[k++] = posDataOutput(0) ;
+            pt32[k++] = posDataOutput(1) ;
+            pt32[k++] = posDataOutput(2) ;
         }
     }
 
@@ -414,7 +424,7 @@ void LiveSLAMWrapper::BALoop()
             monoOdometry->updateTrackingReference();
 
 #ifdef PUB_POINT_CLOUD
-            pubPointCloud(valid_num, imageTimeStamp);
+            pubPointCloud(valid_num, imageTimeStamp, R_vi_2_odometry);
 #endif
             //unlock dense tracking
             monoOdometry->tracking_mtx.lock();
@@ -472,9 +482,10 @@ void LiveSLAMWrapper::BALoop()
         monoOdometry->setNewMarginalzationFlag();
 
         pubOdometry(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
+                monoOdometry->slidingWindow[monoOdometry->tail]->v_bk,
                 monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
                 monoOdometry->pub_odometry, monoOdometry->pub_pose,
-                control_flag );
+                control_flag, R_vi_2_odometry );
 
 #ifdef PRINT_DEBUG_INFO
         int colorFlag = 0 ;

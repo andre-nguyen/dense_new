@@ -65,7 +65,7 @@ public:
 
     void pubCameraLink() ;
 
-    void pubPointCloud(int num, ros::Time imageTimeStamp ) ;
+    void pubPointCloud(int num, ros::Time imageTimeStamp , Matrix3d R_vi_2_odometry) ;
 
 //	/** Resets everything, starting the odometry from the beginning again. */
 //	void resetAll();
@@ -89,6 +89,7 @@ public:
 	// initialization stuff
 	bool isInitialized;
     Eigen::Vector3d gravity_b0 ;
+    Eigen::Matrix3d R_vi_2_odometry ;
 
 	// monoOdometry
 	SlamSystem* monoOdometry;

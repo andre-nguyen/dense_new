@@ -39,20 +39,28 @@
 
 using namespace Eigen;
 
-inline void pubOdometry(const Vector3d& p, const Matrix3d& R, ros::Publisher& pub_odometry, ros::Publisher& pub_pose, int control_flag )
+inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& R,
+                        ros::Publisher& pub_odometry, ros::Publisher& pub_pose,
+                        int control_flag, const Matrix3d& R_vi_2_odometry )
 {
     nav_msgs::Odometry odometry;
-    Eigen::Quaterniond q(R) ;
+    Vector3d output_p = R_vi_2_odometry * p;
+    Vector3d output_v = R_vi_2_odometry * vel;
+    Matrix3d output_R = R_vi_2_odometry * R * R_vi_2_odometry.transpose();
+    Eigen::Quaterniond q(output_R) ;
 
     odometry.header.stamp = ros::Time::now();
     odometry.header.frame_id = "world";
-    odometry.pose.pose.position.x = p(0);
-    odometry.pose.pose.position.y = p(1);
-    odometry.pose.pose.position.z = p(2);
+    odometry.pose.pose.position.x = output_p(0);
+    odometry.pose.pose.position.y = output_p(1);
+    odometry.pose.pose.position.z = output_p(2);
     odometry.pose.pose.orientation.x = q.x();
     odometry.pose.pose.orientation.y = q.y();
     odometry.pose.pose.orientation.z = q.z();
     odometry.pose.pose.orientation.w = q.w();
+    odometry.twist.twist.linear.x = output_v(0) ;
+    odometry.twist.twist.linear.y = output_v(1) ;
+    odometry.twist.twist.linear.z = output_v(2) ;
     if ( control_flag == 0 ){
       odometry.child_frame_id = "V" ;
     }
