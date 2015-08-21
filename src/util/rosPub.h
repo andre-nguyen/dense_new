@@ -92,6 +92,7 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   kfodom.twist.twist.linear.y = 0 ;
   kfodom.twist.twist.linear.z = 0 ;
   //kfodom.child_frame_id = "V" ;
+  //
   output_odometry.kfodom = kfodom ;
   pub_odometry.publish(output_odometry);
 
