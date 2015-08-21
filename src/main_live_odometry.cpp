@@ -46,6 +46,10 @@ ros::Subscriber sub_image[2];
 ros::Subscriber sub_imu;
 LiveSLAMWrapper* globalLiveSLAM = NULL ;
 
+
+#include <sensor_msgs/Imu.h>
+ros::Publisher imu_pub;
+
 bool initCalibrationPar(string caliFilePath)
 {
     //read calibration parameters
@@ -102,6 +106,12 @@ void imuCallBack(const visensor_node::visensor_imu& imu_msg )
     globalLiveSLAM->imu_queue_mtx.lock();
     globalLiveSLAM->imuQueue.push_back( imu_msg );
     globalLiveSLAM->imu_queue_mtx.unlock();
+
+    sensor_msgs::Imu msg;
+    msg.header = imu_msg.header;
+    msg.linear_acceleration = imu_msg.linear_acceleration;
+    msg.angular_velocity = imu_msg.angular_velocity;
+    imu_pub.publish(msg);     
 }
 
 void process_image()
@@ -134,6 +144,7 @@ int main( int argc, char** argv )
     sub_image[0] = nh.subscribe("/cam0", 100, &image0CallBack );
     sub_image[1] = nh.subscribe("/cam1", 100, &image1CallBack );
     sub_imu = nh.subscribe("/cust_imu0", 1000, &imuCallBack ) ;
+    imu_pub = nh.advertise<sensor_msgs::Imu>("/visensor/imu", 1000);
 
     //Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(calib_par.width, calib_par.height, nh);
     LiveSLAMWrapper slamNode(packagePath, nh, calib_par );
