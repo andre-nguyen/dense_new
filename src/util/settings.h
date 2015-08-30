@@ -30,6 +30,7 @@
 
 //#define PRINT_DEBUG_INFO
 #define PUB_POINT_CLOUD
+//#define PUB_KEYFRAME_ODOM
 
 namespace lsd_slam
 {

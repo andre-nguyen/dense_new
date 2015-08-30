@@ -37,16 +37,20 @@
 #include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/fill_image.h"
 #include "quadrotor_msgs/Odometry.h"
+#include "settings.h"
 
 using namespace Eigen;
+static int keyframeIDCount = 0 ;
+static nav_msgs::Odometry last_kfodom ;
 
 inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& R,
                         ros::Publisher& pub_odometry, ros::Publisher& pub_pose,
-                        int control_flag, const Matrix3d& R_vi_2_odometry )
+                        int control_flag, const Matrix3d& R_vi_2_odometry, bool keyframeFlag )
 {
   quadrotor_msgs::Odometry output_odometry ;
+  keyframeIDCount += keyframeFlag ;
 
-  nav_msgs::Odometry odometry, kfodom;
+  nav_msgs::Odometry odometry;
   Vector3d output_p = R_vi_2_odometry * p;
   Vector3d output_v = R_vi_2_odometry * vel;
   Matrix3d output_R = R_vi_2_odometry * R * R_vi_2_odometry.transpose();
@@ -78,6 +82,19 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
     output_odometry.status = quadrotor_msgs::Odometry::STATUS_ODOM_INVALID ;
   }
   output_odometry.curodom = odometry ;
+
+
+#ifdef   PUB_KEYFRAME_ODOM
+  output_odometry.kfid = keyframeIDCount ;
+  if ( keyframeFlag ){
+    output_odometry.kfodom = odometry ;
+    last_kfodom = odometry ;
+  }
+  else {
+    output_odometry.kfodom = last_kfodom ;
+  }
+#else
+  nav_msgs::Odometry kfodom;
   output_odometry.kfid = 1 ;
   kfodom.header.stamp = ros::Time::now();
   kfodom.header.frame_id = "world";
@@ -91,9 +108,9 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   kfodom.twist.twist.linear.x = 0 ;
   kfodom.twist.twist.linear.y = 0 ;
   kfodom.twist.twist.linear.z = 0 ;
-  //kfodom.child_frame_id = "V" ;
-  //
   output_odometry.kfodom = kfodom ;
+#endif
+
   pub_odometry.publish(output_odometry);
 
   geometry_msgs::PoseStamped pose_stamped;

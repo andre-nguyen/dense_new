@@ -165,6 +165,13 @@ void LiveSLAMWrapper::popAndSetGravity()
 
     monoOdometry->margin.initPrior();
     monoOdometry->updateTrackingReference();
+
+    pubOdometry(Eigen::Vector3d::Zero(),
+            Eigen::Vector3d::Zero(),
+            Eigen::Matrix3d::Identity(),
+            monoOdometry->pub_odometry, monoOdometry->pub_pose,
+            0, R_vi_2_odometry,
+            true );
 }
 
 void LiveSLAMWrapper::pubCameraLink()
@@ -485,7 +492,8 @@ void LiveSLAMWrapper::BALoop()
                 monoOdometry->slidingWindow[monoOdometry->tail]->v_bk,
                 monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
                 monoOdometry->pub_odometry, monoOdometry->pub_pose,
-                control_flag, R_vi_2_odometry );
+                control_flag, R_vi_2_odometry,
+                monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag );
 
 #ifdef PRINT_DEBUG_INFO
         int colorFlag = 0 ;
