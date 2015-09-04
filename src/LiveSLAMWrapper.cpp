@@ -480,7 +480,7 @@ void LiveSLAMWrapper::BALoop()
             control_flag = 2 ; //only IMU link, dense tracking fails
         }
 
-#ifdef PRINT_DEBUG_INFO
+#ifdef PUB_GRAPH
         pubCameraLink();
 #endif
 
