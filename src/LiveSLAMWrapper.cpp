@@ -100,7 +100,7 @@ void LiveSLAMWrapper::popAndSetGravity()
         image1_queue_mtx.lock();
         image0BufSize = image0Buf.size();
         image1BufSize = image1Buf.size();
-        if ( image0BufSize < 10 || image1BufSize < 10 ){
+        if ( image0BufSize < 15 || image1BufSize < 15 ){
             image0_queue_mtx.unlock();
             image1_queue_mtx.unlock();
             r.sleep() ;
@@ -151,10 +151,10 @@ void LiveSLAMWrapper::popAndSetGravity()
     image1_queue_mtx.unlock();
     image0_queue_mtx.unlock();
 
-    monoOdometry->insertFrame(imageSeqNumber, image1, tImage,
+    monoOdometry->insertFrame(imageSeqNumber, image0, tImage,
                               Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
     cv::Mat disparity, depth ;
-    monoOdometry->bm_(image1, image0, disparity, CV_32F);
+    monoOdometry->bm_(image0, image1, disparity, CV_32F);
     calculateDepthImage(disparity, depth, 0.11, fx );
     monoOdometry->currentKeyFrame = monoOdometry->slidingWindow[0] ;
     monoOdometry->currentKeyFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
@@ -397,20 +397,20 @@ void LiveSLAMWrapper::BALoop()
                  + lastFrame->beta_c_k);
         Matrix3d R_bk1_2_b0 = lastFrame->R_bk_2_b0 * lastFrame->R_k1_k;
 
-        monoOdometry->insertFrame(imageSeqNumber, image1, imageTimeStamp, R_bk1_2_b0, T_bk1_2_b0, v_bk1);
+        monoOdometry->insertFrame(imageSeqNumber, image0, imageTimeStamp, R_bk1_2_b0, T_bk1_2_b0, v_bk1);
         Frame* currentFrame = monoOdometry->slidingWindow[monoOdometry->tail].get();
         Frame* keyFrame = monoOdometry->currentKeyFrame.get();
         if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag )
         {
             //prepare key frame
             cv::Mat disparity, depth ;
-            monoOdometry->bm_(image1, image0, disparity, CV_32F);
+            monoOdometry->bm_(image0, image1, disparity, CV_32F);
             calculateDepthImage(disparity, depth, 0.11, fx );
             int valid_num = currentFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
 
 #ifdef PRINT_DEBUG_INFO
             //pub debugMap
-            cv::cvtColor(image1, gradientMapForDebug, CV_GRAY2BGR);
+            cv::cvtColor(image0, gradientMapForDebug, CV_GRAY2BGR);
             monoOdometry->generateDubugMap(currentFrame, gradientMapForDebug);
             msg.header.stamp = imageTimeStamp;
             sensor_msgs::fillImage(msg, sensor_msgs::image_encodings::BGR8, height,
@@ -521,15 +521,15 @@ void LiveSLAMWrapper::BALoop()
         br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "body"));
 
 
-        int preIndex = monoOdometry->tail - 1 ;
-        if ( preIndex < 0 ){
-            preIndex += slidingWindowSize ;
-        }
-        Vector3d tt_dist = (monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0 -
-                monoOdometry->slidingWindow[preIndex]->T_bk_2_b0) ;
-        Matrix3d tt_rotate = monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0.transpose() *
-                monoOdometry->slidingWindow[preIndex]->R_bk_2_b0 ;
-        Quaterniond tt_q(tt_rotate) ;
+//        int preIndex = monoOdometry->tail - 1 ;
+//        if ( preIndex < 0 ){
+//            preIndex += slidingWindowSize ;
+//        }
+//        Vector3d tt_dist = (monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0 -
+//                monoOdometry->slidingWindow[preIndex]->T_bk_2_b0) ;
+//        Matrix3d tt_rotate = monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0.transpose() *
+//                monoOdometry->slidingWindow[preIndex]->R_bk_2_b0 ;
+//        Quaterniond tt_q(tt_rotate) ;
 
         to_pub_info.x = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(0) ;
         to_pub_info.y = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(1) ;
@@ -627,6 +627,9 @@ void LiveSLAMWrapper::Loop()
 
         //puts("444") ;
 
+//        cv::imshow("img0", image0 ) ;
+//        cv::imshow("img1", image1 ) ;
+//        cv::waitKey(1) ;
 
         ++imageSeqNumber;
         assert(image0.elemSize() == 1);
@@ -651,6 +654,7 @@ void LiveSLAMWrapper::Loop()
 //        {
             monoOdometry->trackFrame(image0, image1, imageSeqNumber, imageTimeStamp, deltaR );
 //        }
+
 	}
 }
 

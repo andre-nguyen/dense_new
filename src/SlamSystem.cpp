@@ -955,7 +955,7 @@ void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
 {
 	// Create new frame
     std::shared_ptr<Frame> trackingNewFrame(
-                new Frame( frameID, width, height, K, imageTimeStamp.toSec(), img1.data,
+                new Frame( frameID, width, height, K, imageTimeStamp.toSec(), img0.data,
                            Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() )
                 );
     //updateTrackingReference() ;

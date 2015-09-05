@@ -28,8 +28,8 @@
 #define ENABLE_SSE
 #endif
 
-//#define PRINT_DEBUG_INFO
-#define PUB_POINT_CLOUD
+#define PRINT_DEBUG_INFO
+//#define PUB_POINT_CLOUD
 //#define PUB_KEYFRAME_ODOM
 //#define PUB_GRAPH
 
@@ -64,9 +64,12 @@ namespace lsd_slam
 const double PI = acos(-1.0);
 const double huber_r_v = 0.05 ;
 const double huber_r_w = 1.0/180.0*PI ;
-const Eigen::Matrix3d acc_cov = 1e-4 * Eigen::Matrix3d::Identity();
-const Eigen::Matrix3d gra_cov = 1e-4 * Eigen::Matrix3d::Identity();
-const Eigen::Matrix3d gyr_cov = 1e-4 * Eigen::Matrix3d::Identity();
+//const Eigen::Matrix3d acc_cov = 1e-4 * Eigen::Matrix3d::Identity();
+//const Eigen::Matrix3d gra_cov = 1e-4 * Eigen::Matrix3d::Identity();
+//const Eigen::Matrix3d gyr_cov = 1e-4 * Eigen::Matrix3d::Identity();
+const Eigen::Matrix3d acc_cov = 0.23/1000.0*9.8 * 0.23/1000.0*9.8 * 200 * Eigen::Matrix3d::Identity();
+const Eigen::Matrix3d gra_cov = 0.23/1000.0*9.8 * 0.23/1000.0*9.8 * 200 * Eigen::Matrix3d::Identity();
+const Eigen::Matrix3d gyr_cov = 0.0135/180.0*PI * 0.0135/180.0*PI * 25 * Eigen::Matrix3d::Identity();
 const int frameInfoListSize = 200 ;
 #define DENSE_TRACKING_WEIGHT 100000000.0
 #define RECORD_RESULT
