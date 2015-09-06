@@ -98,11 +98,13 @@ void LiveSLAMWrapper::popAndSetGravity()
         ros::spinOnce() ;
         image0_queue_mtx.lock();
         image1_queue_mtx.lock();
+        imu_queue_mtx.lock();
         image0BufSize = image0Buf.size();
         image1BufSize = image1Buf.size();
-        if ( image0BufSize < 15 || image1BufSize < 15 ){
+        if ( image0BufSize < 15 || image1BufSize < 15 || imuQueue.size() < 120 ){
             image0_queue_mtx.unlock();
             image1_queue_mtx.unlock();
+            imu_queue_mtx.unlock();
             r.sleep() ;
             continue ;
         }
@@ -123,7 +125,7 @@ void LiveSLAMWrapper::popAndSetGravity()
         image0_queue_mtx.unlock();
         image1_queue_mtx.unlock();
 
-        imu_queue_mtx.lock();
+        //imu_queue_mtx.lock();
         int imuNum = 0;
         currentIMU_iter = imuQueue.begin() ;
         while( currentIMU_iter->header.stamp < tImage )
@@ -145,11 +147,11 @@ void LiveSLAMWrapper::popAndSetGravity()
     monoOdometry->gravity_b0 = gravity_b0 ;
     printf("gravity_b0.norm() = %lf\n", gravity_b0.norm() );
 
-    imu_queue_mtx.unlock();
-    cv::Mat image1 = pImage1Iter->image.clone();
+    //imu_queue_mtx.unlock();
     cv::Mat image0 = pImage0Iter->image.clone();
-    image1_queue_mtx.unlock();
-    image0_queue_mtx.unlock();
+    cv::Mat image1 = pImage1Iter->image.clone();
+    //image1_queue_mtx.unlock();
+    //image0_queue_mtx.unlock();
 
     monoOdometry->insertFrame(imageSeqNumber, image0, tImage,
                               Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero() );
@@ -406,7 +408,7 @@ void LiveSLAMWrapper::BALoop()
             cv::Mat disparity, depth ;
             monoOdometry->bm_(image0, image1, disparity, CV_32F);
             calculateDepthImage(disparity, depth, 0.11, fx );
-            int valid_num = currentFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
+            currentFrame->setDepthFromGroundTruth( (float*)depth.data ) ;
 
 #ifdef PRINT_DEBUG_INFO
             //pub debugMap
@@ -504,7 +506,9 @@ void LiveSLAMWrapper::BALoop()
         pubPath(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 colorFlag,
                 monoOdometry->path_line, monoOdometry->pub_path);
+#endif
 
+#ifdef  PUB_TF
         static tf::TransformBroadcaster br;
         tf::Transform transform;
         Vector3d t_translation = monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0 ;
@@ -519,7 +523,7 @@ void LiveSLAMWrapper::BALoop()
         q.setZ(t_q.z());
         transform.setRotation(q);
         br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "body"));
-
+#endif
 
 //        int preIndex = monoOdometry->tail - 1 ;
 //        if ( preIndex < 0 ){
@@ -531,11 +535,11 @@ void LiveSLAMWrapper::BALoop()
 //                monoOdometry->slidingWindow[preIndex]->R_bk_2_b0 ;
 //        Quaterniond tt_q(tt_rotate) ;
 
-        to_pub_info.x = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(0) ;
-        to_pub_info.y = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(1) ;
-        to_pub_info.z = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(2) ;
-        monoOdometry->pub_linear_velocity.publish(to_pub_info) ;
-#endif
+//        to_pub_info.x = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(0) ;
+//        to_pub_info.y = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(1) ;
+//        to_pub_info.z = monoOdometry->slidingWindow[monoOdometry->tail]->v_bk(2) ;
+//        monoOdometry->pub_linear_velocity.publish(to_pub_info) ;
+
 
     }
 }
@@ -652,7 +656,7 @@ void LiveSLAMWrapper::Loop()
 //        }
 //        else if(isInitialized && monoOdometry != nullptr)
 //        {
-            monoOdometry->trackFrame(image0, image1, imageSeqNumber, imageTimeStamp, deltaR );
+            monoOdometry->trackFrame(image0, imageSeqNumber, imageTimeStamp, deltaR );
 //        }
 
 	}

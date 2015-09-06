@@ -950,7 +950,7 @@ void SlamSystem::updateTrackingReference()
     }
 }
 
-void SlamSystem::trackFrame(cv::Mat img0, cv::Mat img1, unsigned int frameID,
+void SlamSystem::trackFrame(cv::Mat img0, unsigned int frameID,
                             ros::Time imageTimeStamp, Eigen::Matrix3d deltaR)
 {
 	// Create new frame

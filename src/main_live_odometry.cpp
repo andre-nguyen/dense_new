@@ -153,38 +153,38 @@ void readCalibration(string caliFilePath)
     printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
 }
 
-bool initCalibrationPar(string caliFilePath)
-{
-    //read calibration parameters
-    std::ifstream f(caliFilePath.c_str());
-    if (!f.good())
-    {
-        f.close();
-        printf(" %s not found!\n", caliFilePath.c_str());
-        return false;
-    }
-    std::string l1, l2;
-    std::getline(f,l1);
-    std::getline(f,l2);
-    f.close();
+//bool initCalibrationPar(string caliFilePath)
+//{
+//    //read calibration parameters
+//    std::ifstream f(caliFilePath.c_str());
+//    if (!f.good())
+//    {
+//        f.close();
+//        printf(" %s not found!\n", caliFilePath.c_str());
+//        return false;
+//    }
+//    std::string l1, l2;
+//    std::getline(f,l1);
+//    std::getline(f,l2);
+//    f.close();
 
-    if(std::sscanf(l1.c_str(), "%f %f %f %f %f %f %f %f",
-                   &calib_par.fx, &calib_par.fy, &calib_par.cx, &calib_par.cy,
-                   &calib_par.d[0], &calib_par.d[1], &calib_par.d[2], &calib_par.d[3]) != 8 )
-    {
-        puts("calibration file format error 1") ;
-        return false ;
-    }
-    if(std::sscanf(l2.c_str(), "%d %d", &calib_par.width, &calib_par.height ) != 2)
-    {
-        puts("calibration file format error 2") ;
-        return false ;
-    }
-    printf("fx=%f fy=%f cx=%f cy=%f\n", calib_par.fx, calib_par.fy, calib_par.cx, calib_par.cy ) ;
-    printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
+//    if(std::sscanf(l1.c_str(), "%f %f %f %f %f %f %f %f",
+//                   &calib_par.fx, &calib_par.fy, &calib_par.cx, &calib_par.cy,
+//                   &calib_par.d[0], &calib_par.d[1], &calib_par.d[2], &calib_par.d[3]) != 8 )
+//    {
+//        puts("calibration file format error 1") ;
+//        return false ;
+//    }
+//    if(std::sscanf(l2.c_str(), "%d %d", &calib_par.width, &calib_par.height ) != 2)
+//    {
+//        puts("calibration file format error 2") ;
+//        return false ;
+//    }
+//    printf("fx=%f fy=%f cx=%f cy=%f\n", calib_par.fx, calib_par.fy, calib_par.cx, calib_par.cy ) ;
+//    printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
 
-    return true ;
-}
+//    return true ;
+//}
 
 void image0CallBack(const sensor_msgs::ImageConstPtr& msg)
 {
