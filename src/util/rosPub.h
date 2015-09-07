@@ -123,13 +123,14 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
 inline void pubPath(const Vector3d& p,
                     int kind,
                     visualization_msgs::Marker& path_line,
-                    ros::Publisher& pub_path )
+                    ros::Publisher& pub_path, const Matrix3d& R_vi_2_odometry )
 {
     geometry_msgs::Point pose_p;
     std_msgs::ColorRGBA color_p ;
-    pose_p.x = p(0);
-    pose_p.y = p(1);
-    pose_p.z = p(2);
+    Vector3d ttp = R_vi_2_odometry*p ;
+    pose_p.x = ttp(0);
+    pose_p.y = ttp(1);
+    pose_p.z = ttp(2);
     if ( kind == 0 ){
         color_p.r = 1.0 ;
         color_p.g = 0.0 ;

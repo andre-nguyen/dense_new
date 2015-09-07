@@ -505,7 +505,7 @@ void LiveSLAMWrapper::BALoop()
         }
         pubPath(monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0,
                 colorFlag,
-                monoOdometry->path_line, monoOdometry->pub_path);
+                monoOdometry->path_line, monoOdometry->pub_path, R_vi_2_odometry);
 #endif
 
 #ifdef  PUB_TF
