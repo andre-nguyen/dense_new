@@ -45,7 +45,7 @@ static nav_msgs::Odometry last_kfodom ;
 
 inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& R,
                         ros::Publisher& pub_odometry, ros::Publisher& pub_pose,
-                        int control_flag, const Matrix3d& R_vi_2_odometry, bool keyframeFlag )
+                        int control_flag, const Matrix3d& R_vi_2_odometry, bool keyframeFlag, ros::Time tImage )
 {
   quadrotor_msgs::Odometry output_odometry ;
   keyframeIDCount += keyframeFlag ;
@@ -56,7 +56,8 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   Matrix3d output_R = R_vi_2_odometry * R * R_vi_2_odometry.transpose();
   Eigen::Quaterniond q(output_R) ;
 
-  odometry.header.stamp = ros::Time::now();
+ odometry.header.stamp = tImage;
+
   odometry.header.frame_id = "world";
   odometry.pose.pose.position.x = output_p(0);
   odometry.pose.pose.position.y = output_p(1);
@@ -96,7 +97,7 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
 #else
   nav_msgs::Odometry kfodom;
   output_odometry.kfid = 1 ;
-  kfodom.header.stamp = ros::Time::now();
+  kfodom.header.stamp = tImage;
   kfodom.header.frame_id = "world";
   kfodom.pose.pose.position.x = 0;
   kfodom.pose.pose.position.y = 0;

@@ -173,7 +173,7 @@ void LiveSLAMWrapper::popAndSetGravity()
             Eigen::Matrix3d::Identity(),
             monoOdometry->pub_odometry, monoOdometry->pub_pose,
             0, R_vi_2_odometry,
-            true );
+            true, tImage );
 }
 
 void LiveSLAMWrapper::pubCameraLink()
@@ -495,7 +495,7 @@ void LiveSLAMWrapper::BALoop()
                 monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0,
                 monoOdometry->pub_odometry, monoOdometry->pub_pose,
                 control_flag, R_vi_2_odometry,
-                monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag );
+                monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].keyFrameFlag, imageTimeStamp );
 
 #ifdef PRINT_DEBUG_INFO
         int colorFlag = 0 ;
@@ -511,18 +511,19 @@ void LiveSLAMWrapper::BALoop()
 #ifdef  PUB_TF
         static tf::TransformBroadcaster br;
         tf::Transform transform;
-        Vector3d t_translation = monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0 ;
+        Vector3d t_translation = R_vi_2_odometry * monoOdometry->slidingWindow[monoOdometry->tail]->T_bk_2_b0 ;
         Quaterniond t_q(monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0) ;
         transform.setOrigin(tf::Vector3(t_translation(0),
                                 t_translation(1),
                                 t_translation(2)) );
         tf::Quaternion q;
-        q.setW(t_q.w());
-        q.setX(t_q.x());
-        q.setY(t_q.y());
-        q.setZ(t_q.z());
+        Quaterniond tt_q(R_vi_2_odometry * monoOdometry->slidingWindow[monoOdometry->tail]->R_bk_2_b0 * R_vi_2_odometry.transpose());
+        q.setW(tt_q.w());
+        q.setX(tt_q.x());
+        q.setY(tt_q.y());
+        q.setZ(tt_q.z());
         transform.setRotation(q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "body"));
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "densebody"));
 #endif
 
 //        int preIndex = monoOdometry->tail - 1 ;

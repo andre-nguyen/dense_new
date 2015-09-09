@@ -829,7 +829,7 @@ void SlamSystem::setReprojectionListRelateToLastestKeyFrame(int begin, int end, 
             ref_id -= slidingWindowSize;
         }
         if ( slidingWindow[ref_id]->keyFrameFlag == false
-             || trackFrameCnt > 15
+             || trackFrameCnt > 10
              ){
             continue;
         }
