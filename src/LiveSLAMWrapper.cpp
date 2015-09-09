@@ -43,6 +43,8 @@ LiveSLAMWrapper::LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, 
     cy = calib_par.cy;
     width = calib_par.width;
     height = calib_par.height;
+    R_i_2_c = calib_par.R_i_2_c;
+    T_i_2_c = calib_par.T_i_2_c;
     nh = _nh ;
 
     isInitialized = false;
@@ -657,7 +659,7 @@ void LiveSLAMWrapper::Loop()
 //        }
 //        else if(isInitialized && monoOdometry != nullptr)
 //        {
-            monoOdometry->trackFrame(image0, imageSeqNumber, imageTimeStamp, deltaR );
+            monoOdometry->trackFrame(image0, imageSeqNumber, imageTimeStamp, deltaR, R_i_2_c, T_i_2_c );
 //        }
 
 	}

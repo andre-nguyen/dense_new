@@ -90,6 +90,8 @@ public:
 	bool isInitialized;
     Eigen::Vector3d gravity_b0 ;
     Eigen::Matrix3d R_vi_2_odometry ;
+    Eigen::Matrix3d R_i_2_c ;
+    Eigen::Vector3d T_i_2_c ;
 
 	// monoOdometry
 	SlamSystem* monoOdometry;

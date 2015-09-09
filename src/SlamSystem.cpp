@@ -951,7 +951,9 @@ void SlamSystem::updateTrackingReference()
 }
 
 void SlamSystem::trackFrame(cv::Mat img0, unsigned int frameID,
-                            ros::Time imageTimeStamp, Eigen::Matrix3d deltaR)
+                            ros::Time imageTimeStamp, Eigen::Matrix3d deltaR,
+                            const Eigen::Matrix3d R_i_2_c,const Eigen::Vector3d T_i_2_c
+                            )
 {
 	// Create new frame
     std::shared_ptr<Frame> trackingNewFrame(
@@ -1031,8 +1033,17 @@ void SlamSystem::trackFrame(cv::Mat img0, unsigned int frameID,
     }
     FRAMEINFO& tmpFrameInfo = frameInfoList[tmpTail] ;
     tmpFrameInfo.t = imageTimeStamp ;
+
+#if 0
     tmpFrameInfo.R_k_2_c = RefToFrame.rotationMatrix().cast<double>();
     tmpFrameInfo.T_k_2_c = RefToFrame.translation().cast<double>();
+#else
+    Eigen::Matrix3d r_k_2_c = RefToFrame.rotationMatrix().cast<double>();
+    Eigen::Vector3d t_k_2_c = RefToFrame.translation().cast<double>();
+
+    tmpFrameInfo.R_k_2_c = R_i_2_c.transpose()*r_k_2_c*R_i_2_c;
+    tmpFrameInfo.T_k_2_c = R_i_2_c.transpose()*(r_k_2_c*T_i_2_c + t_k_2_c ) - R_i_2_c.transpose()*T_i_2_c ;
+#endif
 
 //    ROS_WARN("trackFrame = ") ;
 //    std::cout << tmpFrameInfo.T_k_2_c.transpose() << std::endl;

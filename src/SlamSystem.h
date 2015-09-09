@@ -108,7 +108,7 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-    void trackFrame(cv::Mat img0, unsigned int frameID, ros::Time imageTimeStamp, Matrix3d deltaR);
+    void trackFrame(cv::Mat img0, unsigned int frameID, ros::Time imageTimeStamp, Matrix3d deltaR, const Matrix3d R_i_2_c, const Vector3d T_i_2_c);
     void updateTrackingReference() ;
 
     /** Returns the current pose estimate. */

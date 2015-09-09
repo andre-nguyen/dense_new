@@ -49,70 +49,30 @@ cv::Mat R0, R1, P0, P1, Q;
 cv::Rect roi1, roi2 ;
 cv::Mat map00_, map01_, map10_, map11_ ;
 
-//void readCalibration(string caliFilePath)
-//{
-//    cv::FileStorage fs(caliFilePath.c_str(), cv::FileStorage::READ);
+void readCalibrationExtrinsics(string caliFilePath)
+{
+    cv::FileStorage fs(caliFilePath.c_str(), cv::FileStorage::READ);
 
-//    cv::Mat Ric_0, Tic_0, dist_coeff_0, K_0 ;
-//    cv::Mat Ric_1, Tic_1, dist_coeff_1, K_1 ;
-//    cv::Mat T_ ;
+    cv::Mat Ric_0, Tic_0;
+    cv::Mat Ric_1, Tic_1;
 
-////    fs["Ric_0"] >> Ric_0 ;
-////    fs["Ric_1"] >> Ric_1 ;
-////    fs["Tic_0"] >> Tic_0 ;
-////    fs["Tic_1"] >> Tic_1 ;
-//    fs["D0"] >> dist_coeff_0 ;
-//    fs["D1"] >> dist_coeff_1 ;
-//    fs["K0"] >> K_0 ;
-//    fs["K1"] >> K_1 ;
-//    fs["T"] >> T_ ;
-//    T_.inv() ;
+    fs["Ric_0"] >> Ric_0 ;
+    fs["Tic_0"] >> Tic_0 ;
+    fs["Ric_1"] >> Ric_1 ;
+    fs["Tic_1"] >> Tic_1 ;
 
-//    int image_width = 752;
-//    int image_height = 480;
-//    cv::Size img_size(image_width, image_height);
-
-////    Eigen::Matrix3d R_i2c1 ;
-////    Eigen::Matrix3d R_i2c0 ;
-////    Eigen::Vector3d T_i2c1 ;
-////    Eigen::Vector3d T_i2c0 ;
-////    for( int i = 0 ; i < 3; i++ )
-////    {
-////        for( int j = 0 ; j < 3 ; j++ )
-////        {
-////            R_i2c0(i, j) = Ric_0.at<double>(i, j) ;
-////            R_i2c1(i, j) = Ric_1.at<double>(i, j) ;
-////        }
-////        T_i2c0(i) = Tic_0.at<double>(0, i) ;
-////        T_i2c1(i) = Tic_1.at<double>(0, i) ;
-////    }
-////    Eigen::Matrix3d R_c0_2_c1 = R_i2c1 * R_i2c0.transpose() ;
-////    Eigen::Vector3d T_c0_2_c1 = R_i2c1 * (-R_i2c0.transpose()*T_i2c0)  + T_i2c1;
-
-////    Eigen::Vector3d tt = -R_c1_2_c0.transpose()*T_c1_2_c0 ;
-////    T_c1_2_c0 = -tt  ;
-////    R_c1_2_c0.transposeInPlace() ;
-
-//    cv::Mat R(3, 3, CV_64FC1) ;
-//    cv::Mat T(3, 1, CV_64FC1) ;
-//    for( int i = 0 ; i < 3; i++ )
-//    {
-//        for( int j = 0 ; j < 3 ; j++ ){
-//            R.at<double>(i, j) = T_.at<double>(i, j) ;
-//        }
-//        T.at<double>(i, 0) = T_.at<double>(i, 3) ;
-//    }
+    for( int i = 0 ; i < 3; i++ )
+    {
+        for( int j = 0 ; j < 3; j++ )
+        {
+            calib_par.R_i_2_c(i,j) = Ric_1.at<double>(i, j) ;
+        }
+        calib_par.T_i_2_c(i) = Tic_1.at<double>(0, i) ;
+    }
+}
 
 
-//    cv::stereoRectify(K_0, dist_coeff_0, K_1, dist_coeff_1, img_size, R, T, R0, R1, P0, P1, Q, cv::CALIB_ZERO_DISPARITY, 0,
-//                      img_size, &roi1, &roi2);
-
-//    cv::initUndistortRectifyMap(K_0, dist_coeff_0, R0, P0, img_size, CV_16SC2, map00_, map01_);
-//    cv::initUndistortRectifyMap(K_1, dist_coeff_1, R1, P1, img_size, CV_16SC2, map10_, map11_);
-//}
-
-
-void readCalibration(string caliFilePath)
+void readCalibrationIntrisics(string caliFilePath)
 {
     cv::FileStorage fs(caliFilePath.c_str(), cv::FileStorage::READ);
 
@@ -296,7 +256,8 @@ int main( int argc, char** argv )
     string packagePath = ros::package::getPath("dense_new")+"/";
     //string caliFilePath = packagePath + "calib/LSD_calib.cfg" ;
 
-    readCalibration(packagePath+"calib/combine2.yml") ;
+    readCalibrationIntrisics(packagePath+"calib/combine2.yml") ;
+    readCalibrationExtrinsics(packagePath+"calib/visensor.yml");
 //    if ( initCalibrationPar(caliFilePath) == false ){
 //        return 0 ;
 //    }

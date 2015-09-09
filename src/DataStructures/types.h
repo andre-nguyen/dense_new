@@ -8,6 +8,8 @@ struct CALIBRATION_PAR{
   float d[6] ;
   int width ;
   int height ;
+  Eigen::Matrix3d R_i_2_c ;
+  Eigen::Vector3d T_i_2_c ;
 } ;
 
 class ImageMeasurement
