@@ -105,6 +105,7 @@ public:
 
 	int imageSeqNumber;
     ros::NodeHandle nh ;
+    ros::Time lastLoopClorsureTime ;
 
     ros::Time initialTime ;
 

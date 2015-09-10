@@ -176,6 +176,7 @@ void LiveSLAMWrapper::popAndSetGravity()
             monoOdometry->pub_odometry, monoOdometry->pub_pose,
             0, R_vi_2_odometry,
             true, tImage );
+    lastLoopClorsureTime = tImage ;
 }
 
 void LiveSLAMWrapper::pubCameraLink()
@@ -442,12 +443,16 @@ void LiveSLAMWrapper::BALoop()
             monoOdometry->lock_densetracking = false;
             monoOdometry->tracking_mtx.unlock();
 
-            //add possible loop closure link
-            t = (double)cvGetTickCount()  ;
-            monoOdometry->setReprojectionListRelateToLastestKeyFrame( monoOdometry->head, preKeyFrameID,
-                                                                     monoOdometry->slidingWindow[monoOdometry->tail].get() ) ;
-            ROS_WARN("loop closure link cost time: %f", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
-            t = (double)cvGetTickCount()  ;
+            if ( (imageTimeStamp - lastLoopClorsureTime).toSec() > 0.18 )
+            {
+                //add possible loop closure link
+                t = (double)cvGetTickCount()  ;
+                monoOdometry->setReprojectionListRelateToLastestKeyFrame( monoOdometry->head, preKeyFrameID,
+                                                                         monoOdometry->slidingWindow[monoOdometry->tail].get() ) ;
+                ROS_WARN("loop closure link cost time: %f", ((double)cvGetTickCount() - t) / (cvGetTickFrequency() * 1000) );
+                t = (double)cvGetTickCount()  ;
+                lastLoopClorsureTime = imageTimeStamp ;
+            }
         }
 
         if ( monoOdometry->frameInfoList[monoOdometry->frameInfoListHead].trust )
