@@ -5,4 +5,6 @@ http://1drv.ms/1QlCTbl
 
 If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", submitted to Proc. of the {IEEE} Intl. Conf. on Robot. and Autom., 2016. 
 
+For more questions, please contact ylingaa at connect dot ust dot hk .
+
 [1] LSD-SLAM: Large-Scale Direct Monocular SLAM (J. Engel, T. Schöps, D. Cremers), In European Conference on Computer Vision (ECCV), 2014.
