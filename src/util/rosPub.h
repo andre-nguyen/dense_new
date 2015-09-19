@@ -115,7 +115,7 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   pub_odometry.publish(output_odometry);
 
   geometry_msgs::PoseStamped pose_stamped;
-  pose_stamped.header.stamp = ros::Time::now();
+  pose_stamped.header.stamp = tImage;
   pose_stamped.header.frame_id = "world";
   pose_stamped.pose = odometry.pose.pose;
   pub_pose.publish(pose_stamped);
