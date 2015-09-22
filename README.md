@@ -1,9 +1,9 @@
-This is the webpage of the open-source packages of our paper submitted to ICRA2016. our implementation of dense tracking is built on the top of the open-source and vectorized implementation of [1]. Our package is compatible with the standard driver of VI-Sensor and ROS version of indigo.
+This is the webpage of the open-source packages of our paper submitted to ICRA2016. Our implementation of dense tracking is built on the top of the open-source and vectorized implementation of [1]. Our package is compatible with the standard driver of VI-Sensor and ROS version of indigo. OpenCV is needed.
 
 The high resolution video of our submitted paper is: 
 http://1drv.ms/1QlCTbl
 
-If you can not visit Microsoft onedrive, please add 
+If you can not visit Microsoft Onedrive, please add 
 "
 134.170.108.26 onedrive.live.com   
 134.170.109.48 skyapi.onedrive.live.com
