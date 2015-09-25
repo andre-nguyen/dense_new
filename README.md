@@ -10,6 +10,13 @@ If you can not visit Microsoft Onedrive, please add
 "
 in the end of windows/system32/drivers/etc/hosts. (windows user)
 
+We have uploaded the experimental data shown in the video. All the raw data, estimatior output, UKF smoothing output, control command and etc. are included in the rosbags. To download it, please visit,
+Cross-pattern: http://1drv.ms/1NQ0rpY
+Figure-eight: http://1drv.ms/1NQ0uSG
+
+
+We will realease our code if our paper accepted.
+
 If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", submitted to Proc. of the {IEEE} Intl. Conf. on Robot. and Autom., 2016. 
 
 For more questions, please contact ylingaa at connect dot ust dot hk .
