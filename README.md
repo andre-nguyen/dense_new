@@ -17,7 +17,7 @@ Figure-eight: http://1drv.ms/1NQ0uSG
 
 We will release our code if our paper accepted.
 
-If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", submitted to Proc. of the {IEEE} Intl. Conf. on Robot. and Autom., 2016. 
+If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", submitted to Proc. of the IEEE Intl. Conf. on Robot. and Autom., 2016. 
 
 For more questions, please contact ylingaa at connect dot ust dot hk .
 
