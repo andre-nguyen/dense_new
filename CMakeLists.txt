@@ -3,9 +3,7 @@ project(dense_new)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SSE_FLAGS} -DENABLE_SSE -fopenmp -Wall -std=c++11 -Ofast -pipe -march=native -mtune=native")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SSE_FLAGS} -DENABLE_SSE -fopenmp -Ofast -march=native -mtune=native -pipe -Wall")
-SET(OpenCV_INCLUDE_DIRS "/usr/include/opencv;/usr/include/opencv2")
 SET(CMAKE_MODULE_PATH   ${PROJECT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
-
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -93,13 +91,6 @@ include_directories(
   ${CSPARSE_INCLUDE_DIR} #Has been set by SuiteParse
   ${CHOLMOD_INCLUDE_DIR} #Has been set by SuiteParse
 )
-
-
-
-## Declare a cpp library
-# add_library(IROS2015
-#   src/${PROJECT_NAME}/IROS2015.cpp
-# )
 
 ## Declare a cpp executable
 add_library(dense_new SHARED ${SOURCE_FILES})

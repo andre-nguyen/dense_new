@@ -37,7 +37,6 @@
 #include "cv_bridge/cv_bridge.h"
 
 #include "sensor_msgs/Imu.h"
-//#include "visensor_node/visensor_calibration.h"
 
 using namespace lsd_slam;
 using namespace std;
@@ -166,18 +165,17 @@ int main(int argc, char** argv) {
       ros::NodeHandle("~"));
   srv.setCallback(dynConfCb);
 
-  string packagePath = ros::package::getPath("dense_new") + "/";
-  // string caliFilePath = packagePath + "calib/LSD_calib.cfg" ;
+  std::string intrinsics_path, extrinsics_path;
+  if (nh.getParam("intrinsics", intrinsics_path)) {
+    readCalibrationIntrisics(intrinsics_path);
+  } else { return 0; }
+  if (nh.getParam("extrinsics", extrinsics_path)) {
+    readCalibrationExtrinsics(extrinsics_path);
+  } else { return 0; }
 
-  readCalibrationIntrisics(packagePath + "calib/pinky.yml");
-  readCalibrationExtrinsics(packagePath + "calib/pinky_extrinsics.yml");
-  //    if ( initCalibrationPar(caliFilePath) == false ){
-  //        return 0 ;
-  //    }
-
-  sub_image[0] = nh.subscribe("/sync/cam1/image_raw", 100, &image0CallBack);
-  sub_image[1] = nh.subscribe("/sync/cam0/image_raw", 100, &image1CallBack);
-  sub_imu = nh.subscribe("/sync/imu/imu", 1000, &imuCallBack);
+  sub_image[0] = nh.subscribe("image_left", 100, &image0CallBack);
+  sub_image[1] = nh.subscribe("image_right", 100, &image1CallBack);
+  sub_imu = nh.subscribe("imu", 1000, &imuCallBack);
 
   // Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(calib_par.width,
   // calib_par.height, nh);
