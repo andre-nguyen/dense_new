@@ -1,8 +1,9 @@
 /**
 * This file is part of LSD-SLAM.
 *
-* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University
+*of Munich)
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -24,166 +25,142 @@
 #include <stdio.h>
 #include <iostream>
 
+namespace lsd_slam {
 
+class IndexThreadReduce {
+ public:
+  inline IndexThreadReduce() {
+    nextIndex = 0;
+    maxIndex = 0;
+    stepSize = 1;
+    callPerIndex =
+        boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
 
-namespace lsd_slam
-{
+    running = true;
+    for (int i = 0; i < MAPPING_THREADS; i++) {
+      isDone[i] = false;
+      workerThreads[i] = boost::thread(&IndexThreadReduce::workerLoop, this, i);
+    }
 
-class IndexThreadReduce
-{
+    // printf("created ThreadReduce\n");
+  }
+  inline ~IndexThreadReduce() {
+    running = false;
 
-public:
-	inline IndexThreadReduce()
-	{
-		nextIndex = 0;
-		maxIndex = 0;
-		stepSize = 1;
-		callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
+    exMutex.lock();
+    todo_signal.notify_all();
+    exMutex.unlock();
 
-		running = true;
-		for(int i=0;i<MAPPING_THREADS;i++)
-		{
-			isDone[i] = false;
-			workerThreads[i] = boost::thread(&IndexThreadReduce::workerLoop, this, i);
-		}
+    for (int i = 0; i < MAPPING_THREADS; i++) workerThreads[i].join();
 
-		//printf("created ThreadReduce\n");
-	}
-	inline ~IndexThreadReduce()
-	{
-		running = false;
+    // printf("destroyed ThreadReduce\n");
+  }
 
-		exMutex.lock();
-		todo_signal.notify_all();
-		exMutex.unlock();
+  inline void reduce(
+      boost::function<void(int, int, RunningStats*)> callPerIndex, int first,
+      int end, int stepSize = 0) {
+    if (!multiThreading) {
+      callPerIndex(first, end, &runningStats);
+      return;
+    }
 
-		for(int i=0;i<MAPPING_THREADS;i++)
-			workerThreads[i].join();
+    if (stepSize == 0)
+      stepSize = ((end - first) + MAPPING_THREADS - 1) / MAPPING_THREADS;
 
+    // printf("reduce called\n");
 
-		//printf("destroyed ThreadReduce\n");
+    boost::unique_lock<boost::mutex> lock(exMutex);
 
-	}
+    // save
+    this->callPerIndex = callPerIndex;
+    nextIndex = first;
+    maxIndex = end;
+    this->stepSize = stepSize;
 
-	inline void reduce(boost::function<void(int,int,RunningStats*)> callPerIndex, int first, int end, int stepSize = 0)
-	{
-		if(!multiThreading)
-		{
-			callPerIndex(first, end, &runningStats);
-			return;
-		}
+    // go worker threads!
+    for (int i = 0; i < MAPPING_THREADS; i++) isDone[i] = false;
 
+    // let them start!
+    todo_signal.notify_all();
 
+    // printf("reduce waiting for threads to finish\n");
+    // wait for all worker threads to signal they are done.
+    while (true) {
+      // wait for at least one to finish
+      done_signal.wait(lock);
+      // printf("thread finished!\n");
 
-		if(stepSize == 0)
-			stepSize = ((end-first)+MAPPING_THREADS-1)/MAPPING_THREADS;
+      // check if actually all are finished.
+      bool allDone = true;
+      for (int i = 0; i < MAPPING_THREADS; i++) allDone = allDone && isDone[i];
 
+      // all are finished! exit.
+      if (allDone) break;
+    }
 
-		//printf("reduce called\n");
+    nextIndex = 0;
+    maxIndex = 0;
+    this->callPerIndex =
+        boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
 
-		boost::unique_lock<boost::mutex> lock(exMutex);
+    // printf("reduce done (all threads finished)\n");
+  }
 
-		// save
-		this->callPerIndex = callPerIndex;
-		nextIndex = first;
-		maxIndex = end;
-		this->stepSize = stepSize;
+ private:
+  boost::thread workerThreads[MAPPING_THREADS];
+  bool isDone[MAPPING_THREADS];
 
-		// go worker threads!
-		for(int i=0;i<MAPPING_THREADS;i++)
-			isDone[i] = false;
+  boost::mutex exMutex;
+  boost::condition_variable todo_signal;
+  boost::condition_variable done_signal;
 
-		// let them start!
-		todo_signal.notify_all();
+  int nextIndex;
+  int maxIndex;
+  int stepSize;
 
+  bool running;
 
-		//printf("reduce waiting for threads to finish\n");
-		// wait for all worker threads to signal they are done.
-		while(true)
-		{
-			// wait for at least one to finish
-			done_signal.wait(lock);
-			//printf("thread finished!\n");
+  boost::function<void(int, int, RunningStats*)> callPerIndex;
 
-			// check if actually all are finished.
-			bool allDone = true;
-			for(int i=0;i<MAPPING_THREADS;i++)
-				allDone = allDone && isDone[i];
+  void callPerIndexDefault(int i, int j, RunningStats* k) {
+    printf("ERROR: should never be called....\n");
+  }
 
-			// all are finished! exit.
-			if(allDone)
-				break;
-		}
+  void workerLoop(int idx) {
+    boost::unique_lock<boost::mutex> lock(exMutex);
 
-		nextIndex = 0;
-		maxIndex = 0;
-		this->callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3);
+    while (running) {
+      // try to get something to do.
+      int todo = 0;
+      bool gotSomething = false;
+      if (nextIndex < maxIndex) {
+        // got something!
+        todo = nextIndex;
+        nextIndex += stepSize;
+        gotSomething = true;
+      }
 
-		//printf("reduce done (all threads finished)\n");
-	}
+      // if got something: do it (unlock in the meantime)
+      if (gotSomething) {
+        lock.unlock();
 
+        assert(callPerIndex != 0);
 
-private:
-	boost::thread workerThreads[MAPPING_THREADS];
-	bool isDone[MAPPING_THREADS];
+        RunningStats s;
+        callPerIndex(todo, std::min(todo + stepSize, maxIndex), &s);
 
-	boost::mutex exMutex;
-	boost::condition_variable todo_signal;
-	boost::condition_variable done_signal;
+        lock.lock();
+        runningStats.add(&s);
+      }
 
-	int nextIndex;
-	int maxIndex;
-	int stepSize;
-
-	bool running;
-
-	boost::function<void(int,int,RunningStats*)> callPerIndex;
-
-	void callPerIndexDefault(int i, int j,RunningStats* k)
-	{
-		printf("ERROR: should never be called....\n");
-	}
-
-	void workerLoop(int idx)
-	{
-		boost::unique_lock<boost::mutex> lock(exMutex);
-
-		while(running)
-		{
-			// try to get something to do.
-			int todo = 0;
-			bool gotSomething = false;
-			if(nextIndex < maxIndex)
-			{
-				// got something!
-				todo = nextIndex;
-				nextIndex+=stepSize;
-				gotSomething = true;
-			}
-
-			// if got something: do it (unlock in the meantime)
-			if(gotSomething)
-			{
-				lock.unlock();
-
-				assert(callPerIndex != 0);
-
-				RunningStats s;
-				callPerIndex(todo, std::min(todo+stepSize, maxIndex), &s);
-
-				lock.lock();
-				runningStats.add(&s);
-			}
-
-			// otherwise wait on signal, releasing lock in the meantime.
-			else
-			{
-				isDone[idx] = true;
-				//printf("worker %d waiting..\n", idx);
-				done_signal.notify_all();
-				todo_signal.wait(lock);
-			}
-		}
-	}
+      // otherwise wait on signal, releasing lock in the meantime.
+      else {
+        isDone[idx] = true;
+        // printf("worker %d waiting..\n", idx);
+        done_signal.notify_all();
+        todo_signal.wait(lock);
+      }
+    }
+  }
 };
 }

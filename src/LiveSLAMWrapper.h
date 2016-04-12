@@ -1,7 +1,8 @@
 /**
 * This file is part of LSD-SLAM.
 *
-* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University
+*of Munich)
 * For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
@@ -37,81 +38,80 @@
 #include <tf/transform_broadcaster.h>
 
 namespace cv {
-	class Mat;
+class Mat;
 }
 
-
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class SlamSystem;
 
-struct LiveSLAMWrapper
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+struct LiveSLAMWrapper {
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, const CALIBRATION_PAR& calib_par);
+  LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh,
+                  const CALIBRATION_PAR& calib_par);
 
-	/** Destructor. */
-	~LiveSLAMWrapper();
+  /** Destructor. */
+  ~LiveSLAMWrapper();
 
-    void popAndSetGravity() ;
+  void popAndSetGravity();
 
-	/** Runs the main processing loop. Will never return. */
-	void Loop();
+  /** Runs the main processing loop. Will never return. */
+  void Loop();
 
-    /** Runs the main processing loop. Will never return. */
-    void BALoop();
+  /** Runs the main processing loop. Will never return. */
+  void BALoop();
 
-    void pubCameraLink() ;
+  void pubCameraLink();
 
-    void pubPointCloud(int num, ros::Time imageTimeStamp , Matrix3d R_vi_2_odometry) ;
+  void pubPointCloud(int num, ros::Time imageTimeStamp,
+                     Matrix3d R_vi_2_odometry);
 
-//	/** Resets everything, starting the odometry from the beginning again. */
-//	void resetAll();
+  //	/** Resets everything, starting the odometry from the beginning again.
+  //*/
+  //	void resetAll();
 
-	/** Writes the given time and pose to the outFile. */
-	void logCameraPose(const SE3& camToWorld, double time);
+  /** Writes the given time and pose to the outFile. */
+  void logCameraPose(const SE3& camToWorld, double time);
 
-	inline SlamSystem* getSlamSystem() {return monoOdometry;}
+  inline SlamSystem* getSlamSystem() { return monoOdometry; }
 
-    std::list<ImageMeasurement> image0Buf;
-    std::list<ImageMeasurement> image1Buf;
-    std::list<ImageMeasurement>::iterator pImage0Iter;
-    std::list<ImageMeasurement>::iterator pImage1Iter;
-    boost::mutex image0_queue_mtx;
-    boost::mutex image1_queue_mtx;
+  std::list<ImageMeasurement> image0Buf;
+  std::list<ImageMeasurement> image1Buf;
+  std::list<ImageMeasurement>::iterator pImage0Iter;
+  std::list<ImageMeasurement>::iterator pImage1Iter;
+  boost::mutex image0_queue_mtx;
+  boost::mutex image1_queue_mtx;
 
-    std::list<sensor_msgs::Imu> imuQueue;
-    std::list<sensor_msgs::Imu>::iterator currentIMU_iter;
-    boost::mutex imu_queue_mtx;
+  std::list<sensor_msgs::Imu> imuQueue;
+  std::list<sensor_msgs::Imu>::iterator currentIMU_iter;
+  boost::mutex imu_queue_mtx;
 
-	// initialization stuff
-	bool isInitialized;
-    Eigen::Vector3d gravity_b0 ;
-    Eigen::Matrix3d R_vi_2_odometry ;
-    Eigen::Matrix3d R_i_2_c ;
-    Eigen::Vector3d T_i_2_c ;
+  // initialization stuff
+  bool isInitialized;
+  Eigen::Vector3d gravity_b0;
+  Eigen::Matrix3d R_vi_2_odometry;
+  Eigen::Matrix3d R_i_2_c;
+  Eigen::Vector3d T_i_2_c;
 
-	// monoOdometry
-	SlamSystem* monoOdometry;
+  // monoOdometry
+  SlamSystem* monoOdometry;
 
-	std::string outFileName;
-    std::ofstream outFile;
+  std::string outFileName;
+  std::ofstream outFile;
 
-	float fx, fy, cx, cy;
-    double sumDist ;
-	int width, height;
+  float fx, fy, cx, cy;
+  double sumDist;
+  int width, height;
 
-	int imageSeqNumber;
-    ros::NodeHandle nh ;
-    ros::Time lastLoopClorsureTime ;
+  int imageSeqNumber;
+  ros::NodeHandle nh;
+  ros::Time lastLoopClorsureTime;
 
-    ros::Time initialTime ;
+  ros::Time initialTime;
 
-    int cnt_info_smooth ;
-    geometry_msgs::Vector3 to_pub_info ;
+  int cnt_info_smooth;
+  geometry_msgs::Vector3 to_pub_info;
 };
-
 }

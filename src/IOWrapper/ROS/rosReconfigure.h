@@ -1,8 +1,9 @@
 /**
 * This file is part of LSD-SLAM.
 *
-* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University
+*of Munich)
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -20,39 +21,32 @@
 
 #pragma once
 
-
 #include <dynamic_reconfigure/server.h>
 #include "dense_new/LSDParamsConfig.h"
 #include "util/settings.h"
 
+namespace lsd_slam {
 
-namespace lsd_slam
-{
+void dynConfCb(dense_new::LSDParamsConfig &config, uint32_t level) {
+  allowNegativeIdepths = config.allowNegativeIdepths;
+  useSubpixelStereo = config.useSubpixelStereo;
+  multiThreading = config.multiThreading;
+  useAffineLightningEstimation = config.useAffineLightningEstimation;
 
+  KFDistWeight = config.KFDistWeight;
+  KFUsageWeight = config.KFUsageWeight;
 
-void dynConfCb(dense_new::LSDParamsConfig &config, uint32_t level)
-{
-	allowNegativeIdepths = config.allowNegativeIdepths;
-	useSubpixelStereo = config.useSubpixelStereo;
-	multiThreading = config.multiThreading;
-	useAffineLightningEstimation = config.useAffineLightningEstimation;
+  minUseGrad = config.minUseGrad;
+  cameraPixelNoise2 = config.cameraPixelNoise * config.cameraPixelNoise;
+  depthSmoothingFactor = config.depthSmoothingFactor;
 
-	KFDistWeight = config.KFDistWeight;
-	KFUsageWeight = config.KFUsageWeight;
+  doSlam = config.doSLAM;
+  useFabMap = config.useFabMap;
+  doKFReActivation = config.doKFReActivation;
+  doMapping = config.doMapping;
 
-	minUseGrad = config.minUseGrad;
-	cameraPixelNoise2 = config.cameraPixelNoise*config.cameraPixelNoise;
-	depthSmoothingFactor = config.depthSmoothingFactor;
-
-
-	doSlam = config.doSLAM;
-	useFabMap = config.useFabMap;
-	doKFReActivation = config.doKFReActivation;
-	doMapping = config.doMapping;
-
-	maxLoopClosureCandidates = config.maxLoopClosureCandidates;
-	loopclosureStrictness = config.loopclosureStrictness;
-	relocalizationTH = config.relocalizationTH;
+  maxLoopClosureCandidates = config.maxLoopClosureCandidates;
+  loopclosureStrictness = config.loopclosureStrictness;
+  relocalizationTH = config.relocalizationTH;
 }
-
 }

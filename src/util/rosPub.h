@@ -1,7 +1,8 @@
 /**
 * This file is part of LSD-SLAM.
 *
-* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University
+*of Munich)
 * For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
@@ -40,23 +41,24 @@
 #include "settings.h"
 
 using namespace Eigen;
-static int keyframeIDCount = 0 ;
-static nav_msgs::Odometry last_kfodom ;
+static int keyframeIDCount = 0;
+static nav_msgs::Odometry last_kfodom;
 
-inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& R,
-                        ros::Publisher& pub_odometry, ros::Publisher& pub_pose,
-                        int control_flag, const Matrix3d& R_vi_2_odometry, bool keyframeFlag, ros::Time tImage )
-{
-  dense_new::Odometry output_odometry ;
-  keyframeIDCount += keyframeFlag ;
+inline void pubOdometry(const Vector3d& p, const Vector3d& vel,
+                        const Matrix3d& R, ros::Publisher& pub_odometry,
+                        ros::Publisher& pub_pose, int control_flag,
+                        const Matrix3d& R_vi_2_odometry, bool keyframeFlag,
+                        ros::Time tImage) {
+  dense_new::Odometry output_odometry;
+  keyframeIDCount += keyframeFlag;
 
   nav_msgs::Odometry odometry;
   Vector3d output_p = R_vi_2_odometry * p;
   Vector3d output_v = R_vi_2_odometry * vel;
   Matrix3d output_R = R_vi_2_odometry * R * R_vi_2_odometry.transpose();
-  Eigen::Quaterniond q(output_R) ;
+  Eigen::Quaterniond q(output_R);
 
- odometry.header.stamp = tImage;
+  odometry.header.stamp = tImage;
 
   odometry.header.frame_id = "world";
   odometry.pose.pose.position.x = output_p(0);
@@ -66,37 +68,33 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   odometry.pose.pose.orientation.y = q.y();
   odometry.pose.pose.orientation.z = q.z();
   odometry.pose.pose.orientation.w = q.w();
-  odometry.twist.twist.linear.x = output_v(0) ;
-  odometry.twist.twist.linear.y = output_v(1) ;
-  odometry.twist.twist.linear.z = output_v(2) ;
+  odometry.twist.twist.linear.x = output_v(0);
+  odometry.twist.twist.linear.y = output_v(1);
+  odometry.twist.twist.linear.z = output_v(2);
 
-  if ( control_flag == 0 ){
-    //odometry.child_frame_id = "V" ;
-    output_odometry.status = dense_new::Odometry::STATUS_ODOM_VALID ;
+  if (control_flag == 0) {
+    // odometry.child_frame_id = "V" ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_VALID;
+  } else if (control_flag == 1) {
+    // odometry.child_frame_id = "L" ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_LOOPCLOSURE;
+  } else {
+    // odometry.child_frame_id = "X" ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_INVALID;
   }
-  else if ( control_flag == 1 ){
-    //odometry.child_frame_id = "L" ;
-    output_odometry.status = dense_new::Odometry::STATUS_ODOM_LOOPCLOSURE ;
-  }
-  else {
-    //odometry.child_frame_id = "X" ;
-    output_odometry.status = dense_new::Odometry::STATUS_ODOM_INVALID ;
-  }
-  output_odometry.curodom = odometry ;
+  output_odometry.curodom = odometry;
 
-
-#ifdef   PUB_KEYFRAME_ODOM
-  output_odometry.kfid = keyframeIDCount ;
-  if ( keyframeFlag ){
-    output_odometry.kfodom = odometry ;
-    last_kfodom = odometry ;
-  }
-  else {
-    output_odometry.kfodom = last_kfodom ;
+#ifdef PUB_KEYFRAME_ODOM
+  output_odometry.kfid = keyframeIDCount;
+  if (keyframeFlag) {
+    output_odometry.kfodom = odometry;
+    last_kfodom = odometry;
+  } else {
+    output_odometry.kfodom = last_kfodom;
   }
 #else
   nav_msgs::Odometry kfodom;
-  output_odometry.kfid = 1 ;
+  output_odometry.kfid = 1;
   kfodom.header.stamp = tImage;
   kfodom.header.frame_id = "world";
   kfodom.pose.pose.position.x = 0;
@@ -106,10 +104,10 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   kfodom.pose.pose.orientation.y = 0;
   kfodom.pose.pose.orientation.z = 0;
   kfodom.pose.pose.orientation.w = 1.0;
-  kfodom.twist.twist.linear.x = 0 ;
-  kfodom.twist.twist.linear.y = 0 ;
-  kfodom.twist.twist.linear.z = 0 ;
-  output_odometry.kfodom = kfodom ;
+  kfodom.twist.twist.linear.x = 0;
+  kfodom.twist.twist.linear.y = 0;
+  kfodom.twist.twist.linear.z = 0;
+  output_odometry.kfodom = kfodom;
 #endif
 
   pub_odometry.publish(output_odometry);
@@ -121,38 +119,33 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
   pub_pose.publish(pose_stamped);
 }
 
-inline void pubPath(const Vector3d& p,
-                    int kind,
+inline void pubPath(const Vector3d& p, int kind,
                     visualization_msgs::Marker& path_line,
-                    ros::Publisher& pub_path, const Matrix3d& R_vi_2_odometry )
-{
-    geometry_msgs::Point pose_p;
-    std_msgs::ColorRGBA color_p ;
-    Vector3d ttp = R_vi_2_odometry*p ;
-    pose_p.x = ttp(0);
-    pose_p.y = ttp(1);
-    pose_p.z = ttp(2);
-    if ( kind == 0 ){
-        color_p.r = 1.0 ;
-        color_p.g = 0.0 ;
-        color_p.b = 0.0 ;
-        color_p.a = 1.0 ;
-    }
-    else if ( kind == 1 )
-    {
-        color_p.r = 0.0 ;
-        color_p.g = 1.0 ;
-        color_p.b = 0.0 ;
-        color_p.a = 1.0 ;
-    }
-    else{
-      color_p.r = 1.0 ;
-      color_p.g = 1.0 ;
-      color_p.b = 0.0 ;
-      color_p.a = 1.0 ;
-    }
-    path_line.colors.push_back(color_p);
-    path_line.points.push_back(pose_p);
-    path_line.scale.x = 0.01 ;
-    pub_path.publish(path_line);
+                    ros::Publisher& pub_path, const Matrix3d& R_vi_2_odometry) {
+  geometry_msgs::Point pose_p;
+  std_msgs::ColorRGBA color_p;
+  Vector3d ttp = R_vi_2_odometry * p;
+  pose_p.x = ttp(0);
+  pose_p.y = ttp(1);
+  pose_p.z = ttp(2);
+  if (kind == 0) {
+    color_p.r = 1.0;
+    color_p.g = 0.0;
+    color_p.b = 0.0;
+    color_p.a = 1.0;
+  } else if (kind == 1) {
+    color_p.r = 0.0;
+    color_p.g = 1.0;
+    color_p.b = 0.0;
+    color_p.a = 1.0;
+  } else {
+    color_p.r = 1.0;
+    color_p.g = 1.0;
+    color_p.b = 0.0;
+    color_p.a = 1.0;
+  }
+  path_line.colors.push_back(color_p);
+  path_line.points.push_back(pose_p);
+  path_line.scale.x = 0.01;
+  pub_path.publish(path_line);
 }

@@ -1,8 +1,9 @@
 /**
 * This file is part of LSD-SLAM.
 *
-* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University
+*of Munich)
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -38,111 +39,122 @@
 #include "DataStructures/types.h"
 #include "util/math.h"
 
-namespace lsd_slam
-{
+namespace lsd_slam {
 
 class TrackingReference;
 class SE3Tracker;
 class Frame;
 
-class SlamSystem
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+class SlamSystem {
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	// settings. Constant from construction onward.
-	int width;
-	int height;
-	Eigen::Matrix3f K;
-    SE3 RefToFrame ;
-    Eigen::Vector3d gravity_b0;
-    bool twoWayMarginalizatonFlag = false;//false, marginalize oldest; true, marginalize newest
-    MARGINALIZATION margin;
+  // settings. Constant from construction onward.
+  int width;
+  int height;
+  Eigen::Matrix3f K;
+  SE3 RefToFrame;
+  Eigen::Vector3d gravity_b0;
+  bool twoWayMarginalizatonFlag =
+      false;  // false, marginalize oldest; true, marginalize newest
+  MARGINALIZATION margin;
 
-    bool trackingIsGood;
-    float msTrackFrame, msOptimizationIteration, msFindConstraintsItaration, msFindReferences;
-    int nTrackFrame, nOptimizationIteration, nFindConstraintsItaration, nFindReferences;
-    float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration, nAvgFindReferences;
-    struct timeval lastHzUpdate;
-    int head, tail ;
-    Math math;
-    int numOfState ;
+  bool trackingIsGood;
+  float msTrackFrame, msOptimizationIteration, msFindConstraintsItaration,
+      msFindReferences;
+  int nTrackFrame, nOptimizationIteration, nFindConstraintsItaration,
+      nFindReferences;
+  float nAvgTrackFrame, nAvgOptimizationIteration, nAvgFindConstraintsItaration,
+      nAvgFindReferences;
+  struct timeval lastHzUpdate;
+  int head, tail;
+  Math math;
+  int numOfState;
 
-    std::vector<Eigen::Vector3d>T ;
-    std::vector<Eigen::Vector3d>vel ;
-    std::vector<Eigen::Matrix3d>R ;
+  std::vector<Eigen::Vector3d> T;
+  std::vector<Eigen::Vector3d> vel;
+  std::vector<Eigen::Matrix3d> R;
 
-    ros::NodeHandle nh ;
-    ros::Publisher pub_path ;
-    ros::Publisher pub_odometry ;
-    ros::Publisher pub_pose ;
-    ros::Publisher pub_cloud ;
-    ros::Publisher pub_grayImage ;
-    ros::Publisher pub_resudualMap ;
-    ros::Publisher pub_gradientMapForDebug ;
-    ros::Publisher pub_reprojectMap ;
-    ros::Publisher pub_denseTracking ;
-    ros::Publisher pub_angular_velocity ;
-    ros::Publisher pub_linear_velocity ;
-    visualization_msgs::Marker path_line;
-    cv::StereoBM bm_ ;
-    cv::Mat gradientMapForDebug ;
+  ros::NodeHandle nh;
+  ros::Publisher pub_path;
+  ros::Publisher pub_odometry;
+  ros::Publisher pub_pose;
+  ros::Publisher pub_cloud;
+  ros::Publisher pub_grayImage;
+  ros::Publisher pub_resudualMap;
+  ros::Publisher pub_gradientMapForDebug;
+  ros::Publisher pub_reprojectMap;
+  ros::Publisher pub_denseTracking;
+  ros::Publisher pub_angular_velocity;
+  ros::Publisher pub_linear_velocity;
+  visualization_msgs::Marker path_line;
+  cv::StereoBM bm_;
+  cv::Mat gradientMapForDebug;
 
-    int frameInfoListHead, frameInfoListTail ;
-    FRAMEINFO frameInfoList[frameInfoListSize] ;
-    boost::mutex frameInfoList_mtx;
+  int frameInfoListHead, frameInfoListTail;
+  FRAMEINFO frameInfoList[frameInfoListSize];
+  boost::mutex frameInfoList_mtx;
 
-    bool lock_densetracking = false ;
-    boost::mutex tracking_mtx;
+  bool lock_densetracking = false;
+  boost::mutex tracking_mtx;
 
-    SlamSystem(int w, int h, Eigen::Matrix3f K, ros::NodeHandle& n);
-	SlamSystem(const SlamSystem&) = delete;
-	SlamSystem& operator=(const SlamSystem&) = delete;
-	~SlamSystem();
+  SlamSystem(int w, int h, Eigen::Matrix3f K, ros::NodeHandle& n);
+  SlamSystem(const SlamSystem&) = delete;
+  SlamSystem& operator=(const SlamSystem&) = delete;
+  ~SlamSystem();
 
-    void initRosPub();
-    void generateDubugMap(Frame* currentFrame, cv::Mat& gradientMapForDebug ) ;
-    void setDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int id);
+  void initRosPub();
+  void generateDubugMap(Frame* currentFrame, cv::Mat& gradientMapForDebug);
+  void setDepthInit(cv::Mat img0, cv::Mat img1, double timeStamp, int id);
 
-	// tracks a frame.
-	// first frame will return Identity = camToWord.
-	// returns camToWord transformation of the tracked frame.
-	// frameID needs to be monotonically increasing.
-    void trackFrame(cv::Mat img0, unsigned int frameID, ros::Time imageTimeStamp, Matrix3d deltaR, const Matrix3d R_i_2_c, const Vector3d T_i_2_c);
-    void updateTrackingReference() ;
+  // tracks a frame.
+  // first frame will return Identity = camToWord.
+  // returns camToWord transformation of the tracked frame.
+  // frameID needs to be monotonically increasing.
+  void trackFrame(cv::Mat img0, unsigned int frameID, ros::Time imageTimeStamp,
+                  Matrix3d deltaR, const Matrix3d R_i_2_c,
+                  const Vector3d T_i_2_c);
+  void updateTrackingReference();
 
-    /** Returns the current pose estimate. */
-    void debugDisplayDepthMap();
-    void BA() ;
-    void copyStateData(int preStateID );
-    void twoWayMarginalize();
-    void setNewMarginalzationFlag();
-    void insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp,
-                     Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel ) ;
-    void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
-            const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c, const MatrixXd& lastestATA );
-    void processIMU(double dt, const Vector3d&linear_acceleration, const Vector3d &angular_velocity);
-    void setReprojectionListRelateToLastestKeyFrame(int begin, int end, Frame* current );
+  /** Returns the current pose estimate. */
+  void debugDisplayDepthMap();
+  void BA();
+  void copyStateData(int preStateID);
+  void twoWayMarginalize();
+  void setNewMarginalzationFlag();
+  void insertFrame(int imageSeqNumber, cv::Mat img, ros::Time imageTimeStamp,
+                   Eigen::Matrix3d R, Eigen::Vector3d T, Eigen::Vector3d vel);
+  void insertCameraLink(Frame* keyFrame, Frame* currentFrame,
+                        const Matrix3d& R_k_2_c, const Vector3d& T_k_2_c,
+                        const MatrixXd& lastestATA);
+  void processIMU(double dt, const Vector3d& linear_acceleration,
+                  const Vector3d& angular_velocity);
+  void setReprojectionListRelateToLastestKeyFrame(int begin, int end,
+                                                  Frame* current);
 
-	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
-	TrackingReference* trackingReference; // tracking reference for current keyframe. only used by tracking.
-	SE3Tracker* tracker;
-    std::shared_ptr<Frame> slidingWindow[slidingWindowSize] ;
-    std::shared_ptr<Frame> currentKeyFrame;	// changed (and, for VO, maybe deleted)  only by Mapping thread within exclusive lock.
-    //std::shared_ptr<Frame> lastTrackedFrame;
-    bool createNewKeyFrame;
+  // ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
+  TrackingReference* trackingReference;  // tracking reference for current
+                                         // keyframe. only used by tracking.
+  SE3Tracker* tracker;
+  std::shared_ptr<Frame> slidingWindow[slidingWindowSize];
+  std::shared_ptr<Frame> currentKeyFrame;  // changed (and, for VO, maybe
+                                           // deleted)  only by Mapping thread
+                                           // within exclusive lock.
+  // std::shared_ptr<Frame> lastTrackedFrame;
+  bool createNewKeyFrame;
 
-    // ============= LOOP CLOSURE THREAD (+ init) ===============
-    TrackingReference* trackingReferenceConstraint; // tracking reference for current keyframe. only used by tracking.
-    SE3Tracker* trackerConstraint;
+  // ============= LOOP CLOSURE THREAD (+ init) ===============
+  TrackingReference* trackingReferenceConstraint;  // tracking reference for
+                                                   // current keyframe. only
+                                                   // used by tracking.
+  SE3Tracker* trackerConstraint;
 
-	// ============= SHARED ENTITIES =============
-	float tracking_lastResidual;
-	float tracking_lastUsage;
-	float tracking_lastGoodPerBad;
-	float tracking_lastGoodPerTotal;
-	int lastNumConstraintsAddedOnFullRetrack;
-	float lastTrackingClosenessScore;
+  // ============= SHARED ENTITIES =============
+  float tracking_lastResidual;
+  float tracking_lastUsage;
+  float tracking_lastGoodPerBad;
+  float tracking_lastGoodPerTotal;
+  int lastNumConstraintsAddedOnFullRetrack;
+  float lastTrackingClosenessScore;
 };
-
 }
