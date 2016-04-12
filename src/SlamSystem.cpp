@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #include "DataStructures/FrameMemory.h"
 #include <deque>
 #include "sensor_msgs/PointCloud2.h"
-#include "quadrotor_msgs/Odometry.h"
+#include "dense_new/Odometry.h"
 
 // for mkdir
 #include <sys/types.h>
@@ -126,7 +126,7 @@ void SlamSystem::initRosPub()
 {
     pub_path = nh.advertise<visualization_msgs::Marker>("/denseVO/path", 1000);
     pub_cloud = nh.advertise<sensor_msgs::PointCloud2>("/denseVO/cloud", 1000);
-    pub_odometry = nh.advertise<quadrotor_msgs::Odometry>("/denseVO/odometry", 1000);
+    pub_odometry = nh.advertise<dense_new::Odometry>("/denseVO/odometry", 1000);
     pub_pose = nh.advertise<geometry_msgs::PoseStamped>("/denseVO/pose", 1000);
     pub_resudualMap = nh.advertise<sensor_msgs::Image>("denseVO/residualMap", 100 );
     pub_reprojectMap = nh.advertise<sensor_msgs::Image>("denseVO/reprojectMap", 100 );
@@ -1060,4 +1060,3 @@ void SlamSystem::trackFrame(cv::Mat img0, unsigned int frameID,
         tracking_mtx.unlock();
     }
 }
-

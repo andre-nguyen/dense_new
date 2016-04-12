@@ -1,6 +1,7 @@
-<launch>  
-  <node name="dense_new" 
-        pkg="dense_new" 
+<launch>
+  <node name="dense_new"
+        pkg="dense_new"
         type="live_slam"
+        output="screen"
   />
-</launch>  
+</launch>

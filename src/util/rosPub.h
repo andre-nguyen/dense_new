@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
 #include "sensor_msgs/image_encodings.h"
 #include "sensor_msgs/PointCloud.h"
 #include "sensor_msgs/fill_image.h"
-#include "quadrotor_msgs/Odometry.h"
+#include "dense_new/Odometry.h"
 #include "settings.h"
 
 using namespace Eigen;
@@ -47,7 +47,7 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
                         ros::Publisher& pub_odometry, ros::Publisher& pub_pose,
                         int control_flag, const Matrix3d& R_vi_2_odometry, bool keyframeFlag, ros::Time tImage )
 {
-  quadrotor_msgs::Odometry output_odometry ;
+  dense_new::Odometry output_odometry ;
   keyframeIDCount += keyframeFlag ;
 
   nav_msgs::Odometry odometry;
@@ -72,15 +72,15 @@ inline void pubOdometry(const Vector3d& p, const Vector3d& vel, const Matrix3d& 
 
   if ( control_flag == 0 ){
     //odometry.child_frame_id = "V" ;
-    output_odometry.status = quadrotor_msgs::Odometry::STATUS_ODOM_VALID ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_VALID ;
   }
   else if ( control_flag == 1 ){
     //odometry.child_frame_id = "L" ;
-    output_odometry.status = quadrotor_msgs::Odometry::STATUS_ODOM_LOOPCLOSURE ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_LOOPCLOSURE ;
   }
   else {
     //odometry.child_frame_id = "X" ;
-    output_odometry.status = quadrotor_msgs::Odometry::STATUS_ODOM_INVALID ;
+    output_odometry.status = dense_new::Odometry::STATUS_ODOM_INVALID ;
   }
   output_odometry.curodom = odometry ;
 

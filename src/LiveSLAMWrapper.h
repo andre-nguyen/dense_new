@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -26,13 +26,14 @@
 #include <vector>
 #include <chrono>
 #include "image_transport/image_transport.h"
+#include "sensor_msgs/Imu.h"
 #include "sensor_msgs/image_encodings.h"
 #include "sensor_msgs/PointCloud.h"
 #include "boost/thread.hpp"
 #include "util/SophusUtil.h"
 #include "DataStructures/types.h"
 #include "util/rosPub.h"
-#include "visensor_node/visensor_imu.h"
+//#include "visensor_node/visensor_imu.h"
 #include <tf/transform_broadcaster.h>
 
 namespace cv {
@@ -54,7 +55,7 @@ public:
 
 	/** Destructor. */
 	~LiveSLAMWrapper();
-	
+
     void popAndSetGravity() ;
 
 	/** Runs the main processing loop. Will never return. */
@@ -72,9 +73,9 @@ public:
 
 	/** Writes the given time and pose to the outFile. */
 	void logCameraPose(const SE3& camToWorld, double time);
-	
+
 	inline SlamSystem* getSlamSystem() {return monoOdometry;}
-	
+
     std::list<ImageMeasurement> image0Buf;
     std::list<ImageMeasurement> image1Buf;
     std::list<ImageMeasurement>::iterator pImage0Iter;
@@ -82,8 +83,8 @@ public:
     boost::mutex image0_queue_mtx;
     boost::mutex image1_queue_mtx;
 
-    std::list<visensor_node::visensor_imu> imuQueue;
-    std::list<visensor_node::visensor_imu>::iterator currentIMU_iter;
+    std::list<sensor_msgs::Imu> imuQueue;
+    std::list<sensor_msgs::Imu>::iterator currentIMU_iter;
     boost::mutex imu_queue_mtx;
 
 	// initialization stuff
@@ -98,7 +99,7 @@ public:
 
 	std::string outFileName;
     std::ofstream outFile;
-	
+
 	float fx, fy, cx, cy;
     double sumDist ;
 	int width, height;

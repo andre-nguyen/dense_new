@@ -12,11 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   geometry_msgs
-  sensor_msgs 
+  sensor_msgs
+  nav_msgs
   cv_bridge
   image_transport
   message_generation
-  camera_info_manager 
+  camera_info_manager
   dynamic_reconfigure
   cmake_modules
   tf
@@ -28,15 +29,15 @@ add_definitions("-DENABLE_SSE")
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-find_package(libvisensor 1.1.0 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(X11 REQUIRED)
 
 add_message_files(
   DIRECTORY msg
-  FILES visensor_imu.msg 
+  FILES visensor_imu.msg
   visensor_time_host.msg
   visensor_calibration.msg
+  Odometry.msg
 )
 
 add_service_files(
@@ -44,7 +45,7 @@ add_service_files(
 	visensor_calibration_service.srv
 )
 
-generate_messages(DEPENDENCIES geometry_msgs)
+generate_messages(DEPENDENCIES geometry_msgs nav_msgs)
 
 if(NOT DEFINED CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release)
@@ -55,12 +56,12 @@ generate_dynamic_reconfigure_options(cfg/LSDParams.cfg)
 catkin_package(
   INCLUDE_DIRS ${catkin_INCLUDE_DIRS}
   CATKIN_DEPENDS
-  roscpp 
-  sensor_msgs 
-  cv_bridge 
-  std_msgs 
-  image_transport 
-  camera_info_manager 
+  roscpp
+  sensor_msgs
+  cv_bridge
+  std_msgs
+  image_transport
+  camera_info_manager
 )
 
 set(SOURCE_FILES
@@ -89,7 +90,6 @@ include_directories(
   ${PROJECT_SOURCE_DIR}/src
   ${PROJECT_SOURCE_DIR}/thirdparty/
 #  ${OPENNI2_INCLUDE}
-  ${libvisensor_INCLUDE_DIRS}
   ${CSPARSE_INCLUDE_DIR} #Has been set by SuiteParse
   ${CHOLMOD_INCLUDE_DIR} #Has been set by SuiteParse
 )
@@ -106,16 +106,16 @@ add_library(dense_new SHARED ${SOURCE_FILES})
 add_dependencies(dense_new ${${PROJECT_NAME}_EXPORTED_TARGETS}})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(dense_new 
+target_link_libraries(dense_new
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${libvisensor_LIBRARIES}
   X11
 #  OpenNI2
- # ${Boost_FILESYSTEM_LIBRARY} 
+ # ${Boost_FILESYSTEM_LIBRARY}
  # ${Boost_SYSTEM_LIBRARY}
 )
 
 add_executable(live_slam src/main_live_odometry.cpp)
+#add_executable(data_slam src/main_on_images.cpp)
 target_link_libraries(live_slam dense_new)
-
+#target_link_libraries(data_slam dense_new)

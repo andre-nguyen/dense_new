@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -35,8 +35,8 @@
 #include "ros/package.h"
 #include "cv_bridge/cv_bridge.h"
 
-#include "visensor_node/visensor_imu.h"
-#include "visensor_node/visensor_calibration.h"
+#include "sensor_msgs/Imu.h"
+//#include "visensor_node/visensor_calibration.h"
 
 using namespace lsd_slam;
 using namespace std ;
@@ -113,39 +113,6 @@ void readCalibrationIntrisics(string caliFilePath)
     printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
 }
 
-//bool initCalibrationPar(string caliFilePath)
-//{
-//    //read calibration parameters
-//    std::ifstream f(caliFilePath.c_str());
-//    if (!f.good())
-//    {
-//        f.close();
-//        printf(" %s not found!\n", caliFilePath.c_str());
-//        return false;
-//    }
-//    std::string l1, l2;
-//    std::getline(f,l1);
-//    std::getline(f,l2);
-//    f.close();
-
-//    if(std::sscanf(l1.c_str(), "%f %f %f %f %f %f %f %f",
-//                   &calib_par.fx, &calib_par.fy, &calib_par.cx, &calib_par.cy,
-//                   &calib_par.d[0], &calib_par.d[1], &calib_par.d[2], &calib_par.d[3]) != 8 )
-//    {
-//        puts("calibration file format error 1") ;
-//        return false ;
-//    }
-//    if(std::sscanf(l2.c_str(), "%d %d", &calib_par.width, &calib_par.height ) != 2)
-//    {
-//        puts("calibration file format error 2") ;
-//        return false ;
-//    }
-//    printf("fx=%f fy=%f cx=%f cy=%f\n", calib_par.fx, calib_par.fy, calib_par.cx, calib_par.cy ) ;
-//    printf("height=%d width=%d\n", calib_par.width, calib_par.height ) ;
-
-//    return true ;
-//}
-
 void image0CallBack(const sensor_msgs::ImageConstPtr& msg)
 {
     ros::Time tImage = msg->header.stamp;
@@ -181,7 +148,7 @@ void image1CallBack(const sensor_msgs::ImageConstPtr& msg)
     globalLiveSLAM->image1_queue_mtx.unlock();
 }
 
-void imuCallBack(const visensor_node::visensor_imu& imu_msg )
+void imuCallBack(const sensor_msgs::Imu& imu_msg )
 {
     globalLiveSLAM->imu_queue_mtx.lock();
     globalLiveSLAM->imuQueue.push_back( imu_msg );
@@ -197,51 +164,6 @@ void process_BA()
 {
     globalLiveSLAM->BALoop();
 }
-/*
-void fun( ros::NodeHandle& nh)
-{
-    char path[1000] ;
-    int image_height = 480 ;
-    int image_width = 752 ;
-
-    ros::Publisher pub_img0 = nh.advertise<sensor_msgs::Image>("/cam0/image_raw", 10);
-    ros::Publisher pub_img1 = nh.advertise<sensor_msgs::Image>("/cam1/image_raw", 10);
-    sensor_msgs::Image msg ;
-    for( int i = 0 ; i < 60 ; i++ )
-    {
-        msg.header.stamp = ros::Time::now() ;
-
-        sprintf(path, "/home/ygling2008/visensor_calibraion/calibrationdata/left-%04d.png", i ) ;
-        cv::Mat img0 = cv::imread(path) ;
-        cv::cvtColor(img0,img0,CV_BGR2GRAY);
-
-        msg.header.frame_id = "cam0";
-        msg.height = image_height ;
-        msg.width = image_width ;
-        sensor_msgs::fillImage(msg, sensor_msgs::image_encodings::MONO8, image_height, image_width, image_width,
-                                           img0.data );
-        pub_img0.publish(msg) ;
-        imshow("img0", img0) ;
-
-        cv::waitKey(50) ;
-
-        sprintf(path, "/home/ygling2008/visensor_calibraion/calibrationdata/right-%04d.png", i ) ;
-        cv::Mat img1 = cv::imread(path) ;
-        cv::cvtColor(img1,img1,CV_BGR2GRAY);
-        msg.header.frame_id = "cam1";
-        msg.height = image_height ;
-        msg.width = image_width ;
-        sensor_msgs::fillImage(msg, sensor_msgs::image_encodings::MONO8, image_height, image_width, image_width,
-                                           img1.data );
-        printf("%s\n", path ) ;
-        pub_img1.publish(msg) ;
-        imshow("img1", img1) ;
-
-        //usleep(100000) ;
-        cv::waitKey(50) ;
-    }
-}
-*/
 
 int main( int argc, char** argv )
 {
@@ -256,15 +178,15 @@ int main( int argc, char** argv )
     string packagePath = ros::package::getPath("dense_new")+"/";
     //string caliFilePath = packagePath + "calib/LSD_calib.cfg" ;
 
-    readCalibrationIntrisics(packagePath+"calib/combine2.yml") ;
-    readCalibrationExtrinsics(packagePath+"calib/visensor.yml");
+    readCalibrationIntrisics(packagePath+"calib/pinky.yml") ;
+    readCalibrationExtrinsics(packagePath+"calib/pinky_extrinsics.yml");
 //    if ( initCalibrationPar(caliFilePath) == false ){
 //        return 0 ;
 //    }
 
-    sub_image[0] = nh.subscribe("/cam1/image_raw", 100, &image0CallBack );
-    sub_image[1] = nh.subscribe("/cam0/image_raw", 100, &image1CallBack );
-    sub_imu = nh.subscribe("/cust_imu0", 1000, &imuCallBack ) ;
+    sub_image[0] = nh.subscribe("/sync/cam1/image_raw", 100, &image0CallBack );
+    sub_image[1] = nh.subscribe("/sync/cam0/image_raw", 100, &image1CallBack );
+    sub_imu = nh.subscribe("/sync/imu/imu", 1000, &imuCallBack ) ;
 
     //Output3DWrapper* outputWrapper = new ROSOutput3DWrapper(calib_par.width, calib_par.height, nh);
     LiveSLAMWrapper slamNode(packagePath, nh, calib_par );

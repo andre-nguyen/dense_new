@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ LiveSLAMWrapper::LiveSLAMWrapper(std::string packagePath, ros::NodeHandle& _nh, 
     R_vi_2_odometry << 0, 0, 1, -1, 0, 0, 0, -1, 0 ;
 
     //outFileName = packagePath+"estimated_poses.txt";
-    outFileName = packagePath+"angular_volcity.txt";
+    outFileName = packagePath+"angular_velocity.txt";
     outFile.open(outFileName);
 
 	// make Odometry
@@ -301,7 +301,7 @@ void LiveSLAMWrapper::BALoop()
 {
     ros::Rate BARate(2000) ;
     list<ImageMeasurement>::iterator iterImage ;
-    std::list<visensor_node::visensor_imu>::iterator iterIMU ;
+    std::list<sensor_msgs::Imu>::iterator iterIMU ;
     cv::Mat image0 ;
     cv::Mat image1 ;
     cv::Mat gradientMapForDebug(height, width, CV_8UC3) ;
@@ -554,7 +554,7 @@ void LiveSLAMWrapper::BALoop()
 
 void LiveSLAMWrapper::Loop()
 {
-    std::list<visensor_node::visensor_imu>::reverse_iterator reverse_iterImu ;
+    std::list<sensor_msgs::Imu>::reverse_iterator reverse_iterImu ;
     std::list<ImageMeasurement>::iterator  pIter ;
     ros::Time imageTimeStamp ;
     cv::Mat   image0 ;

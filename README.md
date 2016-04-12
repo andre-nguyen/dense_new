@@ -1,9 +1,14 @@
+# DVI-SLAM (Dense Visual-Inertial SLAM)
+This repository is an adaptation of the code presented by Yonggen Ling and Shaojie Shen in their paper "A Dense Visual-Inertial Fusion Method for Aggressive Motion Tracking". This code was later run on their Matrice 100 quadrotor. The aim here is to generalize this code to be adaptable to any kind of set up.
+
+# Previous readme below
+
 This is the webpage of the open-source packages of our paper submitted to ICRA2016. Our implementation of dense tracking is built on the top of the open-source and vectorized implementation of [1]. Our package is compatible with the standard driver of VI-Sensor and ROS version of indigo. OpenCV is needed.
 
-The high resolution video of our submitted paper is: 
+The high resolution video of our submitted paper is:
 http://1drv.ms/1QlCTbl
 
-If you can not visit Microsoft Onedrive, please add 
+If you can not visit Microsoft Onedrive, please add
 "
 134.170.108.26 onedrive.live.com   
 134.170.109.48 skyapi.onedrive.live.com
@@ -15,9 +20,9 @@ Cross-pattern: http://1drv.ms/1NQ0rpY
 Figure-eight: http://1drv.ms/1NQ0uSG
 
 
-We will release our code if our paper accepted.
+We will realease our code if our paper accepted.
 
-If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", in Proc. of the IEEE Intl. Conf. on Robot. and Autom., 2016. 
+If you use our code, please cite our paper "Aggresive Quadrotor Flight Using Dense Visual-Inertial Fusion", submitted to Proc. of the {IEEE} Intl. Conf. on Robot. and Autom., 2016.
 
 For more questions, please contact ylingaa at connect dot ust dot hk .
 
