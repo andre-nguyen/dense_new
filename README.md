@@ -6,10 +6,10 @@ the standard driver of VI-Sensor and ROS version of indigo. OpenCV is needed.
 The high resolution video of our submitted paper is: http://1drv.ms/1QlCTbl
 
 If you can not visit Microsoft Onedrive, please add
-'''
+```
 134.170.108.26 onedrive.live.com
 134.170.109.48 skyapi.onedrive.live.com
-'''
+```
 in the end of windows/system32/drivers/etc/hosts. (windows user)
 
 We have uploaded the experimental data shown in the video. All the raw data,
@@ -21,7 +21,7 @@ in the rosbags. To download it, please visit:
 
 If you use the code, please cite
 
-'''
+```
 @INPROCEEDINGS{
     author={Y. Ling and S. Shen},
     booktitle={2015 IEEE International Conference on Robotics and Biomimetics (ROBIO)},
@@ -31,12 +31,13 @@ If you use the code, please cite
     doi={10.1109/ROBIO.2015.7418830},
     month={Dec},
 }
-'''
-
-our paper "Aggresive Quadrotor Flight Using
+```
+and
+```
+"Aggresive Quadrotor Flight Using
 Dense Visual-Inertial Fusion", submitted to Proc. of the {IEEE} Intl. Conf. on
 Robot. and Autom., 2016.
-
+```
 For more questions, please contact ylingaa at connect dot ust dot hk .
 
 [1] LSD-SLAM: Large-Scale Direct Monocular SLAM (J. Engel, T. Schöps, D.
