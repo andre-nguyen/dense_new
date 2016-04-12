@@ -21,7 +21,7 @@ in the rosbags. To download it, please visit:
 
 If you use the code, please cite
 
-'''latex
+'''
 @INPROCEEDINGS{
     author={Y. Ling and S. Shen},
     booktitle={2015 IEEE International Conference on Robotics and Biomimetics (ROBIO)},
